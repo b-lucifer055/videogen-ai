@@ -11,3 +11,4 @@ numpy
 imageio
 imageio-ffmpeg
 tqdm
+eventlet
