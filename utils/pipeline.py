@@ -51,8 +51,20 @@ class VideoPipeline:
                 self.socketio.emit("job_failed", {"job_id": job_id, "error": error_msg})
 
     def _execute(self, job_id, script, config):
-        def p(step, cur, tot, msg):
-            self.emit(job_id, step, cur, tot, msg)
+       def p(step=None, cur=None, tot=None, msg=None,
+      current=None, total=None, message=None, **kwargs):
+
+    cur = current if current is not None else cur
+    tot = total if total is not None else tot
+    msg = message if message is not None else msg
+
+    self.emit(
+        job_id,
+        step or "processing",
+        cur if cur is not None else 0,
+        tot if tot is not None else 1,
+        msg or ""
+    )
 
         sizes = config.get("sizes", ["portrait_1080"])
         voice_cfg = config.get("voice", {})
