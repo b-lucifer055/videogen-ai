@@ -1,0 +1,557 @@
+{% extends "base.html" %}
+{% block title %}Audio → Video — VideoGen AI{% endblock %}
+{% block content %}
+
+<div class="topbar">
+  <span style="font-size:1.2rem">🎙️</span>
+  <span class="topbar-title">Audio → Video (Multilingual)</span>
+  <div style="display:flex;gap:6px">
+    <span class="badge" style="background:rgba(0,212,170,.12);color:var(--green);border:1px solid rgba(0,212,170,.2)">🇬🇧 English</span>
+    <span class="badge" style="background:rgba(255,214,10,.12);color:var(--yellow);border:1px solid rgba(255,214,10,.2)">🇮🇳 Hindi</span>
+    <span class="badge" style="background:rgba(255,107,53,.12);color:var(--orange);border:1px solid rgba(255,107,53,.2)">🇳🇵 Nepali</span>
+    <span class="badge badge-primary">+90 more</span>
+  </div>
+  <span class="badge badge-free" style="margin-left:auto">Powered by Whisper (Free)</span>
+</div>
+
+<div class="page-body" style="padding-top:24px">
+
+  <!-- How it works banner -->
+  <div style="background:linear-gradient(135deg,rgba(108,99,255,.1),rgba(0,212,255,.06));border:1px solid rgba(108,99,255,.2);border-radius:var(--r2);padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+    <div style="font-size:1.8rem">🎙️</div>
+    <div style="flex:1">
+      <div style="font-weight:700;margin-bottom:3px">Upload Any Audio → Get a Full Video</div>
+      <div style="font-size:.83rem;color:var(--text2)">Whisper auto-detects your language (English / Hindi / Nepali / 90+ more) → transcribes → fetches matching B-roll → adds synced captions → produces download-ready video</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <div style="text-align:center;padding:10px 14px;background:rgba(108,99,255,.08);border-radius:var(--r);border:1px solid rgba(108,99,255,.2)">
+        <div style="font-size:1.3rem">🎙️</div><div style="font-size:.7rem;color:var(--text3);margin-top:3px">Upload Audio</div>
+      </div>
+      <div style="color:var(--text3)">→</div>
+      <div style="text-align:center;padding:10px 14px;background:rgba(0,212,170,.08);border-radius:var(--r);border:1px solid rgba(0,212,170,.2)">
+        <div style="font-size:1.3rem">🔍</div><div style="font-size:.7rem;color:var(--text3);margin-top:3px">Auto Detect</div>
+      </div>
+      <div style="color:var(--text3)">→</div>
+      <div style="text-align:center;padding:10px 14px;background:rgba(255,214,10,.08);border-radius:var(--r);border:1px solid rgba(255,214,10,.2)">
+        <div style="font-size:1.3rem">📝</div><div style="font-size:.7rem;color:var(--text3);margin-top:3px">Transcribe</div>
+      </div>
+      <div style="color:var(--text3)">→</div>
+      <div style="text-align:center;padding:10px 14px;background:rgba(255,107,53,.08);border-radius:var(--r);border:1px solid rgba(255,107,53,.2)">
+        <div style="font-size:1.3rem">🎬</div><div style="font-size:.7rem;color:var(--text3);margin-top:3px">Full Video</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 330px;gap:20px;align-items:start">
+
+    <!-- LEFT -->
+    <div style="display:flex;flex-direction:column;gap:18px">
+
+      <!-- Upload Zone -->
+      <div class="card card-glow fade-in">
+        <h3 style="margin-bottom:4px">🎵 Upload Your Audio</h3>
+        <p style="font-size:.83rem;margin-bottom:16px">Upload voiceover, speech recording, podcast, or any audio — in any language</p>
+
+        <div class="drop-zone" id="audio-drop-zone" onclick="document.getElementById('audio-input').click()"
+             ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropAudio(event)">
+          <div class="drop-zone-icon">🎙️</div>
+          <div style="font-size:1rem;font-weight:700;margin-bottom:6px">Drop Audio or Video File Here</div>
+          <div style="font-size:.83rem;color:var(--text3);margin-bottom:12px">or click to browse</div>
+          <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px">
+            <span class="badge badge-green">MP3</span>
+            <span class="badge badge-green">WAV</span>
+            <span class="badge badge-green">M4A</span>
+            <span class="badge badge-green">AAC</span>
+            <span class="badge badge-green">OGG</span>
+            <span class="badge badge-green">FLAC</span>
+            <span class="badge badge-cyan">MP4 (extracts audio)</span>
+          </div>
+        </div>
+        <input type="file" id="audio-input" accept="audio/*,video/*" style="display:none" onchange="uploadAudio(this.files[0])"/>
+
+        <!-- File Info -->
+        <div id="audio-info" style="display:none;margin-top:14px">
+          <div style="display:flex;align-items:center;gap:14px;padding:14px;background:var(--bg2);border-radius:var(--r2);border:1px solid var(--border)">
+            <!-- Waveform animation -->
+            <div class="waveform" id="waveform" style="display:none">
+              <div class="wave-bar" style="height:60%"></div>
+              <div class="wave-bar" style="height:80%"></div>
+              <div class="wave-bar" style="height:100%"></div>
+              <div class="wave-bar" style="height:70%"></div>
+              <div class="wave-bar" style="height:90%"></div>
+              <div class="wave-bar" style="height:50%"></div>
+              <div class="wave-bar" style="height:80%"></div>
+            </div>
+            <div style="font-size:2rem" id="audio-icon">🎵</div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:.9rem" id="audio-filename">—</div>
+              <div style="font-size:.78rem;color:var(--text3);margin-top:2px" id="audio-meta">—</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="clearAudio()">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Language Detection -->
+      <div id="lang-panel" class="card" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <h3>🔍 Language Detection</h3>
+          <button class="btn btn-ghost btn-sm" id="detect-btn" onclick="detectLanguage()">🔍 Detect Language</button>
+        </div>
+
+        <div id="lang-result" style="padding:16px;background:var(--bg2);border-radius:var(--r2);text-align:center">
+          <div style="color:var(--text3);font-size:.85rem">Click "Detect Language" or it will auto-detect when generating</div>
+        </div>
+      </div>
+
+      <!-- Transcript Preview -->
+      <div id="transcript-panel" class="card" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <h3>📝 Transcript Preview</h3>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" id="transcribe-btn" onclick="quickTranscribe()">📝 Transcribe Now</button>
+            <button class="btn btn-ghost btn-sm" onclick="downloadSRT()">⬇️ SRT</button>
+          </div>
+        </div>
+
+        <div id="transcribe-loading" style="display:none;text-align:center;padding:30px;color:var(--text3)">
+          <div style="font-size:1.5rem;margin-bottom:8px" class="spin">⚙️</div>
+          <div style="font-size:.85rem" id="transcribe-msg">Transcribing with Whisper... This may take a minute.</div>
+        </div>
+
+        <div id="transcript-output" style="display:none">
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px" id="transcript-badges"></div>
+          <div style="background:var(--bg2);border-radius:var(--r2);padding:16px;max-height:300px;overflow-y:auto;font-size:.85rem;line-height:1.8;color:var(--text)" id="transcript-text"></div>
+          <div style="margin-top:12px;font-size:.78rem;color:var(--text3)" id="transcript-meta"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Settings -->
+    <div style="display:flex;flex-direction:column;gap:14px;position:sticky;top:78px">
+
+      <!-- Language Override -->
+      <div class="card">
+        <h4 style="margin-bottom:10px">🌐 Language Settings</h4>
+        <div class="form-group">
+          <label class="form-label">Audio Language</label>
+          <select id="lang-override" class="form-select">
+            <option value="">🔍 Auto-detect (Recommended)</option>
+            <option value="en">🇬🇧 English</option>
+            <option value="hi">🇮🇳 Hindi (हिन्दी)</option>
+            <option value="ne">🇳🇵 Nepali (नेपाली)</option>
+            <option value="es">🇪🇸 Spanish</option>
+            <option value="fr">🇫🇷 French</option>
+            <option value="de">🇩🇪 German</option>
+            <option value="ja">🇯🇵 Japanese</option>
+            <option value="zh">🇨🇳 Chinese</option>
+            <option value="ar">🇸🇦 Arabic</option>
+            <option value="pt">🇵🇹 Portuguese</option>
+            <option value="ru">🇷🇺 Russian</option>
+            <option value="ko">🇰🇷 Korean</option>
+            <option value="ur">🇵🇰 Urdu</option>
+            <option value="bn">🇧🇩 Bengali</option>
+          </select>
+        </div>
+
+        <div style="margin-top:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:.83rem;font-weight:600">Translate captions to English</span>
+            <label class="toggle"><input type="checkbox" id="translate-captions"/><div class="toggle-slider"></div></label>
+          </div>
+          <p style="font-size:.74rem;color:var(--text3)">If your audio is Hindi/Nepali, show English captions on the video</p>
+        </div>
+      </div>
+
+      <!-- Whisper Model -->
+      <div class="card">
+        <h4 style="margin-bottom:10px">🤖 Whisper Model</h4>
+        <select id="whisper-model" class="form-select">
+          <option value="tiny">Tiny — Fastest (~1GB RAM)</option>
+          <option value="base" selected>Base — Balanced (~1GB RAM)</option>
+          <option value="small">Small — Better quality (~2GB RAM)</option>
+          <option value="medium">Medium — Best quality (~5GB RAM)</option>
+        </select>
+        <p style="font-size:.74rem;color:var(--text3);margin-top:8px">Larger models = more accurate but slower. Base is great for Hindi/Nepali.</p>
+      </div>
+
+      <!-- Output Format -->
+      <div class="card">
+        <h4 style="margin-bottom:10px">📐 Output Format</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="audio-size-chips"></div>
+      </div>
+
+      <!-- Captions -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <h4>📝 Captions Style</h4>
+          <label class="toggle"><input type="checkbox" id="audio-captions" checked/><div class="toggle-slider"></div></label>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Caption Style</label>
+          <select id="caption-style" class="form-select">
+            <option value="reels">Reels (5 words/line)</option>
+            <option value="standard">Standard (full sentence)</option>
+            <option value="word">Word-by-word (Karaoke)</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-top:10px">
+          <label class="form-label">Highlight Color</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="color" id="audio-cap-color" value="#FFFF00"
+                   style="width:42px;height:34px;border:1.5px solid var(--border);border-radius:8px;background:transparent;cursor:pointer"/>
+            <span style="font-size:.82rem;color:var(--text2)">#FFFF00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Music -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <h4>🎵 Background Music</h4>
+          <label class="toggle"><input type="checkbox" id="audio-bgm" checked/><div class="toggle-slider"></div></label>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="display:flex;justify-content:space-between">
+            Volume <span style="color:var(--primary)" id="audio-mvol-lbl">12%</span>
+          </label>
+          <input type="range" class="form-range" min="0" max="50" step="2" value="12"
+                 oninput="document.getElementById('audio-mvol-lbl').textContent=this.value+'%'"/>
+        </div>
+      </div>
+
+      <!-- Generate Button -->
+      <button class="btn btn-accent btn-lg" onclick="generateFromAudio()" id="audio-gen-btn" disabled style="font-size:1rem">
+        🎬 Generate Full Video
+      </button>
+
+      <div style="text-align:center;font-size:.75rem;color:var(--text3)">
+        Video will be ready in ~2-10 minutes depending on audio length
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Progress Modal -->
+<div id="audio-modal" class="modal-overlay">
+  <div class="modal-box">
+    <div style="text-align:center;margin-bottom:22px">
+      <div style="font-size:2.8rem;margin-bottom:10px">🎙️</div>
+      <h2 style="margin-bottom:6px">Creating Video from Audio</h2>
+      <div id="audio-job-id" style="font-size:.78rem;color:var(--text3)">Job: —</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px">
+      <div class="step-item" id="as-detecting"><div style="display:flex;align-items:center;gap:10px"><span>🔍</span><div style="flex:1"><div style="font-size:.82rem;font-weight:600">Detecting Language</div><div style="font-size:.73rem;color:var(--text3)" id="as-detecting-msg">Waiting...</div></div><span id="as-detecting-icon">⏳</span></div></div>
+      <div class="step-item" id="as-transcribing"><div style="display:flex;align-items:center;gap:10px"><span>📝</span><div style="flex:1"><div style="font-size:.82rem;font-weight:600">Transcribing Audio (Whisper)</div><div style="font-size:.73rem;color:var(--text3)" id="as-transcribing-msg">Waiting...</div></div><span id="as-transcribing-icon">⏳</span></div></div>
+      <div class="step-item" id="as-analyzing"><div style="display:flex;align-items:center;gap:10px"><span>🧠</span><div style="flex:1"><div style="font-size:.82rem;font-weight:600">Analyzing Content</div><div style="font-size:.73rem;color:var(--text3)" id="as-analyzing-msg">Waiting...</div></div><span id="as-analyzing-icon">⏳</span></div></div>
+      <div class="step-item" id="as-broll"><div style="display:flex;align-items:center;gap:10px"><span>🎬</span><div style="flex:1"><div style="font-size:.82rem;font-weight:600">Fetching B-Roll</div><div style="font-size:.73rem;color:var(--text3)" id="as-broll-msg">Waiting...</div></div><span id="as-broll-icon">⏳</span></div></div>
+      <div class="step-item" id="as-captions"><div style="display:flex;align-items:center;gap:10px"><span>📝</span><div style="flex:1"><div style="font-size:.82rem;font-weight:600">Generating Captions</div><div style="font-size:.73rem;color:var(--text3)" id="as-captions-msg">Waiting...</div></div><span id="as-captions-icon">⏳</span></div></div>
+      <div class="step-item" id="as-compose"><div style="display:flex;align-items:center;gap:10px"><span>🎞️</span><div style="flex:1"><div style="font-size:.82rem;font-weight:600">Composing Video</div><div style="font-size:.73rem;color:var(--text3)" id="as-compose-msg">Waiting...</div></div><span id="as-compose-icon">⏳</span></div></div>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:.83rem">
+        <span style="color:var(--text2)" id="audio-prog-msg">Starting...</span>
+        <strong style="color:var(--accent)" id="audio-prog-pct">0%</strong>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="background:linear-gradient(90deg,var(--green),var(--cyan));width:0%" id="audio-prog-fill"></div></div>
+    </div>
+
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('audio-modal').classList.remove('open')">Minimize</button>
+      <a href="/dashboard" id="audio-dash-btn" class="btn btn-green" style="flex:1;display:none">📥 View Dashboard</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+<script>
+let uploadedAudioPath = null;
+let uploadedAudioFilename = null;
+let currentTranscript = null;
+let currentJobId = null;
+let socket;
+
+const AUDIO_SIZES = {
+  "portrait_1080":  {icon:"📱",label:"Reels 9:16",  sub:"1080×1920"},
+  "landscape_1080p":{icon:"📺",label:"YouTube 16:9",sub:"1920×1080"},
+  "square_1080":    {icon:"⬛",label:"Insta 1:1",   sub:"1080×1080"},
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderSizeChips();
+  initSocket();
+});
+
+function initSocket() {
+  try {
+    socket = io({transports:["websocket","polling"]});
+    socket.on("progress", onAudioProgress);
+    socket.on("job_completed", onAudioComplete);
+    socket.on("job_failed", onAudioFailed);
+  } catch(e) {}
+}
+
+function renderSizeChips() {
+  const c = document.getElementById("audio-size-chips");
+  c.innerHTML = "";
+  Object.entries(AUDIO_SIZES).forEach(([key, info]) => {
+    const sel = key === "portrait_1080";
+    const el = document.createElement("div");
+    el.className = "size-chip" + (sel?" selected":"");
+    el.style.cssText = "display:flex;align-items:center;gap:7px;padding:8px 10px;background:var(--bg2);border:1.5px solid "+(sel?"var(--primary)":"var(--border)")+";border-radius:var(--r);cursor:pointer;transition:var(--t);user-select:none";
+    el.dataset.key = key;
+    el.innerHTML = `<span style="font-size:.85rem">${info.icon}</span><div style="flex:1"><div style="font-size:.71rem;font-weight:600">${info.label}</div><div style="font-size:.63rem;color:var(--text3)">${info.sub}</div></div><div style="width:14px;height:14px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:.58rem;background:${sel?"var(--primary)":"transparent"};border-color:${sel?"var(--primary)":"var(--border2)"};">${sel?"✓":""}</div>`;
+    el.onclick = () => {
+      el.classList.toggle("selected");
+      const check = el.querySelector("div:last-child");
+      const isSel = el.classList.contains("selected");
+      el.style.borderColor = isSel ? "var(--primary)" : "var(--border)";
+      check.style.background = isSel ? "var(--primary)" : "transparent";
+      check.style.borderColor = isSel ? "var(--primary)" : "var(--border2)";
+      check.textContent = isSel ? "✓" : "";
+    };
+    c.appendChild(el);
+  });
+}
+
+// ── Drag & Drop ───────────────────────────────────────────────────────────────
+function dragOver(e) { e.preventDefault(); document.getElementById("audio-drop-zone").classList.add("drag-over"); }
+function dragLeave(e) { document.getElementById("audio-drop-zone").classList.remove("drag-over"); }
+function dropAudio(e) { e.preventDefault(); document.getElementById("audio-drop-zone").classList.remove("drag-over"); if (e.dataTransfer.files[0]) uploadAudio(e.dataTransfer.files[0]); }
+
+async function uploadAudio(file) {
+  if (!file) return;
+  const fd = new FormData();
+  fd.append("file", file);
+  document.getElementById("audio-info").style.display = "block";
+  document.getElementById("audio-filename").textContent = file.name;
+  document.getElementById("audio-meta").textContent = "Uploading...";
+  document.getElementById("audio-icon").textContent = "⏳";
+
+  try {
+    const r = await fetch("/api/audio/upload", {method:"POST",body:fd});
+    const d = await r.json();
+    uploadedAudioPath = d.path;
+    uploadedAudioFilename = file.name;
+
+    document.getElementById("audio-filename").textContent = file.name;
+    document.getElementById("audio-meta").textContent = `${d.size_mb}MB • Ready`;
+    document.getElementById("audio-icon").style.display = "none";
+    document.getElementById("waveform").style.display = "flex";
+
+    document.getElementById("lang-panel").style.display = "block";
+    document.getElementById("transcript-panel").style.display = "block";
+    document.getElementById("audio-gen-btn").disabled = false;
+    showToast("✅ Audio uploaded!", "success");
+
+    // Auto-detect language
+    detectLanguage();
+  } catch(e) {
+    document.getElementById("audio-meta").textContent = "❌ Upload failed: " + e.message;
+    showToast("Upload failed: "+e.message,"error");
+  }
+}
+
+function clearAudio() {
+  uploadedAudioPath = null;
+  document.getElementById("audio-info").style.display = "none";
+  document.getElementById("lang-panel").style.display = "none";
+  document.getElementById("transcript-panel").style.display = "none";
+  document.getElementById("audio-gen-btn").disabled = true;
+  document.getElementById("lang-result").innerHTML = '<div style="color:var(--text3);font-size:.85rem">Upload audio to detect language</div>';
+  document.getElementById("transcript-output").style.display = "none";
+  document.getElementById("waveform").style.display = "none";
+  document.getElementById("audio-icon").style.display = "block";
+  document.getElementById("audio-icon").textContent = "🎵";
+}
+
+async function detectLanguage() {
+  if (!uploadedAudioPath) return;
+  const btn = document.getElementById("detect-btn");
+  btn.disabled = true; btn.textContent = "Detecting...";
+
+  try {
+    const r = await fetch("/api/audio/detect-language",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({path:uploadedAudioPath})});
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error);
+    renderLangResult(d);
+    showToast(`Language detected: ${d.flag} ${d.name}`, "success");
+  } catch(e) {
+    document.getElementById("lang-result").innerHTML = `<div style="color:var(--red);font-size:.83rem">Detection error: ${e.message}</div>`;
+  } finally { btn.disabled=false; btn.textContent="🔍 Detect Language"; }
+}
+
+function renderLangResult(d) {
+  const confidence = Math.round(d.confidence * 100);
+  const confColor = confidence > 80 ? "var(--green)" : confidence > 50 ? "var(--yellow)" : "var(--red)";
+  const topProbs = Object.entries(d.all_probs || {}).slice(0,4);
+  document.getElementById("lang-result").innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px">
+      <div style="font-size:3rem">${d.flag}</div>
+      <div>
+        <div style="font-size:1.4rem;font-weight:800">${d.name}</div>
+        <div style="font-size:.83rem;color:var(--text2)">${d.native || ""} (${d.language})</div>
+      </div>
+      <div style="margin-left:auto;text-align:center">
+        <div style="font-size:1.6rem;font-weight:800;color:${confColor}">${confidence}%</div>
+        <div style="font-size:.7rem;color:var(--text3)">confidence</div>
+      </div>
+    </div>
+    ${topProbs.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px">${topProbs.map(([lang,prob])=>`<span class="badge badge-primary" style="font-size:.69rem">${lang}: ${Math.round(prob*100)}%</span>`).join("")}</div>` : ""}`;
+}
+
+async function quickTranscribe() {
+  if (!uploadedAudioPath) return;
+  const btn = document.getElementById("transcribe-btn");
+  btn.disabled = true; btn.textContent = "Transcribing...";
+  document.getElementById("transcribe-loading").style.display = "block";
+  document.getElementById("transcript-output").style.display = "none";
+
+  const lang = document.getElementById("lang-override").value || null;
+  try {
+    const r = await fetch("/api/audio/transcribe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({path:uploadedAudioPath,language:lang})});
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error);
+    currentTranscript = d.transcript;
+    renderTranscript(d.transcript);
+    showToast("✅ Transcription complete!","success");
+  } catch(e) { showToast("Transcription error: "+e.message,"error"); }
+  finally { btn.disabled=false; btn.textContent="📝 Transcribe Now"; document.getElementById("transcribe-loading").style.display="none"; }
+}
+
+function renderTranscript(t) {
+  const badges = document.getElementById("transcript-badges");
+  const text = document.getElementById("transcript-text");
+  const meta = document.getElementById("transcript-meta");
+
+  badges.innerHTML = `
+    <span class="badge badge-primary">${t.language_flag || ""} ${t.language_name} (${t.language})</span>
+    <span class="badge badge-green">⏱️ ${formatDuration(t.duration)}</span>
+    <span class="badge badge-yellow">📝 ${t.word_count} words</span>`;
+
+  text.textContent = t.text || "No text detected";
+  meta.textContent = `${(t.segments||[]).length} segments • ${(t.words||[]).length} words with timestamps`;
+  document.getElementById("transcript-output").style.display = "block";
+}
+
+function downloadSRT() {
+  if (!currentTranscript) { showToast("Transcribe first","error"); return; }
+  // Build SRT from segments
+  const segs = currentTranscript.segments || [];
+  let srt = "";
+  segs.forEach((s,i) => {
+    const start = fmtTime(s.start), end = fmtTime(s.end);
+    srt += `${i+1}\n${start} --> ${end}\n${s.text}\n\n`;
+  });
+  const blob = new Blob([srt], {type:"text/plain"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "transcript.srt";
+  a.click();
+}
+
+function fmtTime(s) {
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=Math.floor(s%60),ms=Math.round((s%1)*1000);
+  return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")},${String(ms).padStart(3,"0")}`;
+}
+
+async function generateFromAudio() {
+  if (!uploadedAudioPath) { showToast("Upload audio first","error"); return; }
+  const sizes = Array.from(document.querySelectorAll("#audio-size-chips .selected")).map(c=>c.dataset.key);
+  if (!sizes.length) { showToast("Select at least one format","error"); return; }
+
+  const payload = {
+    audio_path: uploadedAudioPath,
+    sizes,
+    language: document.getElementById("lang-override").value || null,
+    add_captions: document.getElementById("audio-captions").checked,
+    translate: document.getElementById("translate-captions").checked,
+    caption_style: document.getElementById("caption-style").value,
+    caption_color: document.getElementById("audio-cap-color").value,
+    add_bgm: document.getElementById("audio-bgm").checked,
+    music_volume: 0.12,
+  };
+
+  const btn = document.getElementById("audio-gen-btn");
+  btn.disabled=true; btn.innerHTML='<span class="spin">⚙️</span> Starting...';
+
+  try {
+    const r = await fetch("/api/audio/create-video",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error);
+    currentJobId = d.job_id;
+    openAudioModal(d.job_id);
+    if (socket) socket.emit("subscribe_job",{job_id:d.job_id});
+    else pollAudioJob(d.job_id);
+    showToast("🎬 Video generation started!","success");
+  } catch(e) { showToast("Error: "+e.message,"error"); }
+  finally { btn.disabled=false; btn.innerHTML="🎬 Generate Full Video"; }
+}
+
+function openAudioModal(jobId) {
+  document.getElementById("audio-job-id").textContent = "Job: " + jobId;
+  document.getElementById("audio-modal").classList.add("open");
+  document.getElementById("audio-dash-btn").style.display = "none";
+  document.getElementById("audio-prog-fill").style.width = "0%";
+  document.getElementById("audio-prog-pct").textContent = "0%";
+  document.getElementById("audio-prog-msg").textContent = "Starting...";
+}
+
+const AUDIO_STEPS = ["detecting","transcribing","analyzing","broll","captions","compose"];
+function onAudioProgress(data) {
+  if (data.job_id !== currentJobId) return;
+  const pct = data.progress||0;
+  document.getElementById("audio-prog-fill").style.width = pct+"%";
+  document.getElementById("audio-prog-pct").textContent = pct+"%";
+  document.getElementById("audio-prog-msg").textContent = data.message||"";
+  const step = data.step;
+  const si = AUDIO_STEPS.indexOf(step);
+  AUDIO_STEPS.forEach((s,i) => {
+    const el = document.getElementById("as-"+s);
+    const msgEl = document.getElementById("as-"+s+"-msg");
+    const icon = document.getElementById("as-"+s+"-icon");
+    if (!el) return;
+    if (i < si) { el.classList.add("done"); el.classList.remove("active"); if(icon)icon.textContent="✅"; if(msgEl)msgEl.textContent="Done"; }
+    else if (s === step) { el.classList.add("active"); el.classList.remove("done"); if(icon)icon.innerHTML='<span class="spin">🔄</span>'; if(msgEl)msgEl.textContent=data.message||"Processing..."; }
+  });
+}
+
+function onAudioComplete(data) {
+  if (data.job_id !== currentJobId) return;
+  document.getElementById("audio-prog-fill").style.width = "100%";
+  document.getElementById("audio-prog-pct").textContent = "100%";
+  document.getElementById("audio-prog-msg").textContent = "🎉 Video ready!";
+  document.getElementById("audio-dash-btn").style.display = "flex";
+  AUDIO_STEPS.forEach(s => {
+    document.getElementById("as-"+s)?.classList.add("done");
+    const i = document.getElementById("as-"+s+"-icon");
+    if(i) i.textContent = "✅";
+  });
+  showToast("🎉 Your multilingual video is ready!","success",8000);
+}
+
+function onAudioFailed(data) {
+  if (data.job_id !== currentJobId) return;
+  document.getElementById("audio-prog-msg").textContent = "❌ " + data.error;
+  showToast("Failed: "+data.error,"error",8000);
+}
+
+async function pollAudioJob(jobId) {
+  const iv = setInterval(async()=>{
+    const r = await fetch("/api/job/"+jobId);
+    const j = await r.json();
+    onAudioProgress({job_id:jobId,step:j.current_step,progress:j.progress,message:j.message});
+    if(j.status==="completed"){clearInterval(iv);onAudioComplete({job_id:jobId});}
+    else if(j.status==="failed"){clearInterval(iv);onAudioFailed({job_id:jobId,error:j.error});}
+  },2500);
+}
+
+document.getElementById("audio-modal").addEventListener("click",e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove("open");});
+</script>
+{% endblock %}

@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — VideoGen AI{% endblock %}
+{% block content %}
+
+<div class="topbar">
+  <span style="font-size:1.2rem">📊</span>
+  <span class="topbar-title">Dashboard</span>
+  <div style="margin-left:auto;display:flex;gap:8px">
+    <button class="btn btn-ghost btn-sm" onclick="refreshJobs()">🔄 Refresh</button>
+    <a href="/" class="btn btn-primary btn-sm">+ New Video</a>
+  </div>
+</div>
+
+<div class="page-body" style="padding-top:24px">
+
+  <!-- Stats -->
+  <div class="g4" style="margin-bottom:22px">
+    <div class="card" style="text-align:center;padding:18px 12px">
+      <div style="font-size:2rem;font-weight:800;color:var(--primary)" id="stat-total">—</div>
+      <div style="font-size:.78rem;color:var(--text3);margin-top:4px">Total Jobs</div>
+    </div>
+    <div class="card" style="text-align:center;padding:18px 12px">
+      <div style="font-size:2rem;font-weight:800;color:var(--green)" id="stat-done">—</div>
+      <div style="font-size:.78rem;color:var(--text3);margin-top:4px">Completed</div>
+    </div>
+    <div class="card" style="text-align:center;padding:18px 12px">
+      <div style="font-size:2rem;font-weight:800;color:var(--yellow)" id="stat-proc">—</div>
+      <div style="font-size:.78rem;color:var(--text3);margin-top:4px">Processing</div>
+    </div>
+    <div class="card" style="text-align:center;padding:18px 12px">
+      <div style="font-size:2rem;font-weight:800;color:var(--red)" id="stat-fail">—</div>
+      <div style="font-size:.78rem;color:var(--text3);margin-top:4px">Failed</div>
+    </div>
+  </div>
+
+  <!-- Jobs -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <h3>Recent Jobs</h3>
+      <div style="display:flex;gap:8px">
+        <select id="filter-status" class="form-select" style="width:auto;padding:7px 30px 7px 12px;font-size:.82rem" onchange="renderJobs()">
+          <option value="all">All Status</option>
+          <option value="completed">✅ Completed</option>
+          <option value="processing">⏳ Processing</option>
+          <option value="queued">🕐 Queued</option>
+          <option value="failed">❌ Failed</option>
+        </select>
+      </div>
+    </div>
+    <div id="jobs-list">
+      <div style="text-align:center;padding:50px 20px;color:var(--text3)">
+        <div style="font-size:2.5rem;margin-bottom:10px">📋</div>
+        <div style="font-weight:600;margin-bottom:6px">No jobs yet</div>
+        <div style="font-size:.85rem">Create your first video to see it here</div>
+        <a href="/" class="btn btn-primary" style="margin-top:16px;display:inline-flex">+ Create Video</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.job-card{padding:16px;border:1px solid var(--border);border-radius:var(--r2);background:var(--card2);transition:var(--t);margin-bottom:8px;cursor:pointer}
+.job-card:hover{border-color:var(--primary);transform:translateX(3px)}
+.job-card.completed{border-left:3px solid var(--green)}
+.job-card.processing{border-left:3px solid var(--yellow)}
+.job-card.failed{border-left:3px solid var(--red)}
+.job-card.queued{border-left:3px solid var(--text3)}
+.dl-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:linear-gradient(135deg,var(--green),var(--cyan));color:#001a14;font-size:.78rem;font-weight:700;border-radius:10px;text-decoration:none;transition:var(--t)}
+.dl-btn:hover{transform:translateY(-1px);filter:brightness(1.08)}
+</style>
+
+{% endblock %}
+{% block scripts %}
+<script>
+let allJobs = [];
+
+const STATUS_CFG = {
+  completed: {icon:"✅",cls:"completed",badge:"badge-green",label:"Completed"},
+  processing:{icon:"⏳",cls:"processing",badge:"badge-yellow",label:"Processing"},
+  queued:    {icon:"🕐",cls:"queued",   badge:"",            label:"Queued"},
+  failed:    {icon:"❌",cls:"failed",   badge:"badge-red",   label:"Failed"}
+};
+
+const SIZE_LABELS = {
+  portrait_1080:"📱 Reels 9:16",landscape_1080p:"📺 YouTube 16:9",
+  square_1080:"⬛ Square 1:1",landscape_720p:"🖥️ 720p",
+  portrait_720:"📱 Stories",twitter:"🐦 Twitter",srt:"📝 SRT",txt:"📄 TXT"
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  refreshJobs();
+  setInterval(refreshJobs, 5000);
+});
+
+async function refreshJobs() {
+  try {
+    const r = await fetch("/api/jobs");
+    allJobs = await r.json();
+    renderStats();
+    renderJobs();
+  } catch(e) {}
+}
+
+function renderStats() {
+  document.getElementById("stat-total").textContent = allJobs.length;
+  document.getElementById("stat-done").textContent = allJobs.filter(j=>j.status==="completed").length;
+  document.getElementById("stat-proc").textContent = allJobs.filter(j=>j.status==="processing"||j.status==="queued").length;
+  document.getElementById("stat-fail").textContent = allJobs.filter(j=>j.status==="failed").length;
+}
+
+function renderJobs() {
+  const filter = document.getElementById("filter-status").value;
+  const jobs = filter === "all" ? allJobs : allJobs.filter(j => j.status === filter);
+  const c = document.getElementById("jobs-list");
+
+  if (!jobs.length) {
+    c.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text3)"><div style="font-size:2.5rem;margin-bottom:10px">🔍</div><div>No ${filter === "all" ? "" : filter+" "}jobs found</div></div>`;
+    return;
+  }
+
+  c.innerHTML = jobs.map(job => {
+    const sc = STATUS_CFG[job.status] || STATUS_CFG.queued;
+    const cfg = job.config || {};
+    const sizes = (cfg.sizes || []).join(", ");
+    const date = formatDate(job.created_at);
+    const analysis = job.analysis || {};
+    const lang = job.detected_language;
+    const transcript = job.transcript;
+
+    let actionHTML = "";
+    if (job.status === "completed" && job.outputs?.length) {
+      actionHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">
+        ${job.outputs.map(o => {
+          if (o.size === "srt") return `<a href="/api/download/${job.id}/srt" class="dl-btn" style="background:linear-gradient(135deg,var(--primary),#8b5cf6);color:white">⬇️ Download SRT</a>`;
+          return `<a href="/api/download/${job.id}/${o.size}" class="dl-btn">⬇️ ${SIZE_LABELS[o.size]||o.size}</a>`;
+        }).join("")}
+      </div>`;
+    } else if (job.status === "processing" || job.status === "queued") {
+      actionHTML = `<div style="margin-top:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:.78rem">
+          <span style="color:var(--text2)">${job.message || "Processing..."}</span>
+          <strong style="color:var(--primary)">${job.progress}%</strong>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${job.progress}%"></div></div>
+      </div>`;
+    } else if (job.status === "failed") {
+      actionHTML = `<div style="margin-top:8px;font-size:.8rem;color:var(--red)">❌ ${(job.error||"").substring(0,120)}</div>`;
+    }
+
+    return `<div class="job-card ${sc.cls}">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:1.4rem">${sc.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <code style="font-size:.82rem;font-weight:700">${job.id}</code>
+            <span class="badge ${sc.badge}" style="font-size:.68rem">${sc.label}</span>
+            ${analysis.mood ? `<span class="badge badge-primary" style="font-size:.68rem">🎭 ${analysis.mood}</span>` : ""}
+            ${lang ? `<span class="badge badge-cyan" style="font-size:.68rem">${lang.flag} ${lang.name}</span>` : ""}
+            ${transcript ? `<span class="badge badge-green" style="font-size:.68rem">📝 ${transcript.word_count} words</span>` : ""}
+          </div>
+          <div style="font-size:.77rem;color:var(--text3)">
+            ${date}
+            ${sizes ? ` • ${sizes}` : ""}
+            ${analysis.scenes?.length ? ` • ${analysis.scenes.length} scenes` : ""}
+          </div>
+        </div>
+        <button class="btn btn-danger btn-xs" onclick="event.stopPropagation();deleteJob('${job.id}')" style="flex-shrink:0">🗑️</button>
+      </div>
+      ${actionHTML}
+    </div>`;
+  }).join("");
+}
+
+async function deleteJob(jobId) {
+  if (!confirm("Delete this job and its output files?")) return;
+  await fetch(`/api/job/${jobId}/delete`,{method:"DELETE"});
+  refreshJobs();
+  showToast("Job deleted","success");
+}
+</script>
+{% endblock %}

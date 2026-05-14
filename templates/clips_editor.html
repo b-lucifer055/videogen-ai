@@ -1,0 +1,501 @@
+{% extends "base.html" %}
+{% block title %}Raw Clips Editor — VideoGen AI{% endblock %}
+{% block content %}
+
+<div class="topbar">
+  <span style="font-size:1.2rem">🎬</span>
+  <span class="topbar-title">Raw Clips Editor</span>
+  <span class="badge badge-free">Auto + Manual Mode</span>
+  <div style="margin-left:auto;display:flex;gap:8px">
+    <button class="btn btn-ghost btn-sm" onclick="clearAll()">🗑️ Clear All</button>
+    <button class="btn btn-primary" id="edit-btn" onclick="startEdit()" disabled>🚀 Create Edit</button>
+  </div>
+</div>
+
+<div class="page-body" style="padding-top:24px">
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
+
+    <!-- LEFT: Upload + Clip Grid -->
+    <div style="display:flex;flex-direction:column;gap:18px">
+
+      <!-- Upload Zone -->
+      <div class="card card-glow fade-in">
+        <h3 style="margin-bottom:4px">📂 Upload Your Raw Clips</h3>
+        <p style="font-size:.83rem;margin-bottom:16px">Upload any raw video footage — AI auto-edits it into a post-ready video</p>
+
+        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
+             ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFiles(event)">
+          <div class="drop-zone-icon">🎥</div>
+          <div style="font-size:1rem;font-weight:700;margin-bottom:6px">Drag & Drop Your Clips Here</div>
+          <div style="font-size:.83rem;color:var(--text3);margin-bottom:12px">or click to browse</div>
+          <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px">
+            <span class="badge badge-primary">MP4</span>
+            <span class="badge badge-primary">MOV</span>
+            <span class="badge badge-primary">AVI</span>
+            <span class="badge badge-primary">MKV</span>
+            <span class="badge badge-primary">WEBM</span>
+            <span class="badge badge-primary">M4V</span>
+          </div>
+        </div>
+        <input type="file" id="file-input" multiple accept="video/*" style="display:none" onchange="uploadFiles(this.files)"/>
+
+        <!-- Upload Progress -->
+        <div id="upload-progress" style="display:none;margin-top:12px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:.82rem">
+            <span id="upload-msg">Uploading...</span>
+            <span id="upload-pct">0%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="upload-bar" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <!-- Clips Grid -->
+      <div id="clips-section" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <h3>🎞️ Your Clips (<span id="clip-count">0</span>)</h3>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="selectAll()">Select All</button>
+            <button class="btn btn-ghost btn-sm" onclick="deselectAll()">Deselect All</button>
+          </div>
+        </div>
+
+        <!-- Mode Tabs -->
+        <div class="tab-nav" style="margin-bottom:14px">
+          <button class="tab-btn active" id="tab-auto" onclick="switchMode('auto')">⚡ Auto Mode</button>
+          <button class="tab-btn" id="tab-manual" onclick="switchMode('manual')">🎛️ Manual Mode</button>
+        </div>
+
+        <div id="clips-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px"></div>
+
+        <!-- Manual Mode Controls -->
+        <div id="manual-controls" style="display:none;margin-top:16px">
+          <div class="card">
+            <h4 style="margin-bottom:12px">🎛️ Manual Edit Controls</h4>
+            <p style="font-size:.8rem;margin-bottom:14px;color:var(--text3)">Configure per-clip settings below. Click a clip to select it.</p>
+
+            <div id="selected-clip-info" style="padding:12px;background:var(--bg2);border-radius:var(--r);margin-bottom:14px;font-size:.83rem;color:var(--text3);text-align:center">
+              Click a clip above to configure it
+            </div>
+
+            <div class="g2" style="gap:10px">
+              <div class="form-group">
+                <label class="form-label">Start Time (s)</label>
+                <input type="number" class="form-input" id="clip-start" value="0" min="0" step="0.5" style="padding:8px"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Max Duration (s)</label>
+                <input type="number" class="form-input" id="clip-maxdur" value="8" min="1" max="60" step="0.5" style="padding:8px"/>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Edit Settings -->
+    <div style="display:flex;flex-direction:column;gap:14px;position:sticky;top:78px">
+
+      <!-- Output Format -->
+      <div class="card">
+        <h4 style="margin-bottom:10px">📐 Output Format</h4>
+        <select id="output-size" class="form-select">
+          <option value="portrait_1080">📱 Reels 9:16 (1080×1920)</option>
+          <option value="landscape_1080p">📺 YouTube 16:9 (1920×1080)</option>
+          <option value="square_1080">⬛ Instagram 1:1 (1080×1080)</option>
+          <option value="landscape_720p">🖥️ 720p Wide</option>
+          <option value="portrait_720">📱 Stories 720p</option>
+          <option value="twitter">🐦 Twitter/X</option>
+        </select>
+      </div>
+
+      <!-- Color Grading -->
+      <div class="card">
+        <h4 style="margin-bottom:10px">🎨 Color Grading</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="color-presets">
+          <!-- rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Transitions -->
+      <div class="card">
+        <h4 style="margin-bottom:10px">✨ Transitions</h4>
+        <select id="transition-type" class="form-select">
+          <option value="fade">🌅 Fade</option>
+          <option value="dissolve">💧 Dissolve</option>
+          <option value="slide">➡️ Slide</option>
+          <option value="zoom">🔍 Zoom In</option>
+          <option value="cut">✂️ Hard Cut</option>
+          <option value="blur">💨 Blur</option>
+        </select>
+      </div>
+
+      <!-- Clip Duration -->
+      <div class="card">
+        <h4 style="margin-bottom:10px">⏱️ Clip Duration</h4>
+        <div class="form-group">
+          <label class="form-label" style="display:flex;justify-content:space-between">
+            Max per clip <span style="color:var(--primary)" id="maxdur-lbl">8s</span>
+          </label>
+          <input type="range" class="form-range" id="max-clip-dur" min="2" max="30" step="1" value="8"
+                 oninput="document.getElementById('maxdur-lbl').textContent=this.value+'s'"/>
+        </div>
+      </div>
+
+      <!-- Music -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <h4>🎵 Background Music</h4>
+          <label class="toggle"><input type="checkbox" id="add-music" checked/><div class="toggle-slider"></div></label>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Music Mood</label>
+          <select id="music-mood" class="form-select">
+            <option value="energetic">⚡ Energetic</option>
+            <option value="inspirational" selected>🌟 Inspirational</option>
+            <option value="calm">🌊 Calm</option>
+            <option value="dramatic">🎭 Dramatic</option>
+            <option value="happy">😊 Happy</option>
+            <option value="travel">✈️ Travel</option>
+            <option value="fitness">💪 Fitness</option>
+            <option value="tech">💻 Tech</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-top:10px">
+          <label class="form-label" style="display:flex;justify-content:space-between">
+            Volume <span style="color:var(--primary)" id="mvol-lbl">15%</span>
+          </label>
+          <input type="range" class="form-range" min="0" max="100" step="5" value="15"
+                 oninput="document.getElementById('mvol-lbl').textContent=this.value+'%'"/>
+        </div>
+      </div>
+
+      <!-- Audio Upload -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <h4>🎤 Custom Audio</h4>
+          <label class="toggle"><input type="checkbox" id="use-custom-audio" onchange="toggleAudioUpload()"/><div class="toggle-slider"></div></label>
+        </div>
+        <div id="audio-upload-area" style="display:none">
+          <p style="font-size:.78rem;color:var(--text3);margin-bottom:10px">Upload your voiceover or music to replace/overlay</p>
+          <div class="drop-zone" style="padding:20px" onclick="document.getElementById('audio-file-input').click()">
+            <div style="font-size:1.5rem;margin-bottom:6px">🎵</div>
+            <div style="font-size:.8rem;font-weight:600">Upload Audio</div>
+            <div style="font-size:.73rem;color:var(--text3)">MP3, WAV, M4A, AAC</div>
+          </div>
+          <input type="file" id="audio-file-input" accept="audio/*,video/*" style="display:none" onchange="uploadAudioFile(this.files[0])"/>
+          <div id="audio-upload-info" style="margin-top:8px;font-size:.8rem;color:var(--text3)"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Progress Modal -->
+<div id="edit-modal" class="modal-overlay">
+  <div class="modal-box">
+    <div style="text-align:center;margin-bottom:22px">
+      <div style="font-size:2.5rem;margin-bottom:8px">🎬</div>
+      <h2 style="margin-bottom:6px">Editing Your Clips</h2>
+      <div style="font-size:.78rem;color:var(--text3)" id="edit-job-id">Job: —</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:18px" id="edit-steps">
+      <div class="step-item" id="es-editing"><div style="display:flex;align-items:center;gap:10px"><span>🎬</span><div style="flex:1"><div style="font-size:.82rem;font-weight:600">Processing Clips</div><div style="font-size:.73rem;color:var(--text3)" id="es-editing-msg">Waiting...</div></div><span id="es-editing-icon">⏳</span></div></div>
+      <div class="step-item" id="es-music"><div style="display:flex;align-items:center;gap:10px"><span>🎵</span><div style="flex:1"><div style="font-size:.82rem;font-weight:600">Adding Music</div><div style="font-size:.73rem;color:var(--text3)" id="es-music-msg">Waiting...</div></div><span id="es-music-icon">⏳</span></div></div>
+      <div class="step-item" id="es-captions"><div style="display:flex;align-items:center;gap:10px"><span>📝</span><div style="flex:1"><div style="font-size:.82rem;font-weight:600">Adding Captions</div><div style="font-size:.73rem;color:var(--text3)" id="es-captions-msg">Waiting...</div></div><span id="es-captions-icon">⏳</span></div></div>
+      <div class="step-item" id="es-finalizing"><div style="display:flex;align-items:center;gap:10px"><span>✨</span><div style="flex:1"><div style="font-size:.82rem;font-weight:600">Finalizing Export</div><div style="font-size:.73rem;color:var(--text3)" id="es-finalizing-msg">Waiting...</div></div><span id="es-finalizing-icon">⏳</span></div></div>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:.83rem">
+        <span style="color:var(--text2)" id="edit-msg">Starting...</span>
+        <strong style="color:var(--primary)" id="edit-pct">0%</strong>
+      </div>
+      <div class="progress-bar"><div class="progress-fill progress-fill-green" id="edit-fill" style="width:0%"></div></div>
+    </div>
+
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('edit-modal').classList.remove('open')">Minimize</button>
+      <a href="/dashboard" id="edit-dash-btn" class="btn btn-green" style="flex:1;display:none">📥 View Dashboard</a>
+    </div>
+  </div>
+</div>
+
+<style>
+.color-btn{padding:8px 10px;border-radius:var(--r);border:1.5px solid var(--border);cursor:pointer;transition:var(--t);font-size:.75rem;font-weight:600;text-align:center;background:var(--bg2);color:var(--text2)}
+.color-btn:hover,.color-btn.selected{border-color:var(--primary);background:rgba(108,99,255,.08);color:var(--text)}
+</style>
+
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+<script>
+const COLOR_PRESETS = [
+  {id:"cinematic",label:"🎬 Cinematic"},
+  {id:"vibrant",   label:"🌈 Vibrant"},
+  {id:"vintage",   label:"📷 Vintage"},
+  {id:"moody",     label:"🌑 Moody"},
+  {id:"bright",    label:"☀️ Bright"},
+  {id:"warm",      label:"🌅 Warm"},
+  {id:"cool",      label:"❄️ Cool"},
+  {id:"black_white",label:"⬛ B&W"},
+  {id:"sharp",     label:"🔪 Sharp"},
+  {id:"none",      label:"✋ Original"},
+];
+
+let uploadedClips = [];
+let selectedClips = new Set();
+let currentEditJobId = null;
+let selectedColorPreset = "cinematic";
+let customAudioPath = null;
+let socket;
+let editMode = "auto";
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderColorPresets();
+  initSocket();
+});
+
+function initSocket() {
+  try {
+    socket = io({transports:["websocket","polling"]});
+    socket.on("progress", onEditProgress);
+    socket.on("job_completed", onEditComplete);
+    socket.on("job_failed", onEditFailed);
+  } catch(e) {}
+}
+
+function renderColorPresets() {
+  const c = document.getElementById("color-presets");
+  c.innerHTML = COLOR_PRESETS.map(p =>
+    `<div class="color-btn ${p.id==='cinematic'?'selected':''}" data-id="${p.id}" onclick="selectColor('${p.id}',this)">${p.label}</div>`
+  ).join("");
+}
+
+function selectColor(id, el) {
+  selectedColorPreset = id;
+  document.querySelectorAll(".color-btn").forEach(b => b.classList.remove("selected"));
+  el.classList.add("selected");
+}
+
+// ── Drag & Drop ───────────────────────────────────────────────────────────────
+function dragOver(e) { e.preventDefault(); document.getElementById("drop-zone").classList.add("drag-over"); }
+function dragLeave(e) { document.getElementById("drop-zone").classList.remove("drag-over"); }
+function dropFiles(e) {
+  e.preventDefault();
+  document.getElementById("drop-zone").classList.remove("drag-over");
+  uploadFiles(e.dataTransfer.files);
+}
+
+async function uploadFiles(files) {
+  if (!files || !files.length) return;
+  const progressEl = document.getElementById("upload-progress");
+  progressEl.style.display = "block";
+
+  const formData = new FormData();
+  for (const f of files) formData.append("files", f);
+
+  document.getElementById("upload-msg").textContent = `Uploading ${files.length} clip(s)...`;
+  document.getElementById("upload-bar").style.width = "30%";
+
+  try {
+    const r = await fetch("/api/clips/upload", {method:"POST", body: formData});
+    const d = await r.json();
+
+    document.getElementById("upload-bar").style.width = "100%";
+    document.getElementById("upload-msg").textContent = `✅ ${d.files.length} clip(s) uploaded!`;
+
+    d.files.forEach(f => {
+      uploadedClips.push(f);
+      selectedClips.add(f.id);
+    });
+
+    renderClips();
+    updateEditBtn();
+    showToast(`✅ ${d.files.length} clip(s) uploaded!`, "success");
+
+    setTimeout(() => { progressEl.style.display = "none"; }, 2000);
+  } catch(e) {
+    document.getElementById("upload-msg").textContent = "❌ Upload failed: " + e.message;
+    showToast("Upload failed: "+e.message, "error");
+  }
+}
+
+function renderClips() {
+  const grid = document.getElementById("clips-grid");
+  const section = document.getElementById("clips-section");
+  const count = document.getElementById("clip-count");
+  section.style.display = uploadedClips.length ? "block" : "none";
+  count.textContent = uploadedClips.length;
+
+  grid.innerHTML = uploadedClips.map(clip => `
+    <div class="clip-card ${selectedClips.has(clip.id)?'selected':''}" id="clip-${clip.id}" onclick="toggleClip('${clip.id}')">
+      <div class="clip-thumb">
+        <video src="${clip.url}" style="width:100%;height:100%;object-fit:cover" preload="metadata" muted></video>
+      </div>
+      <div class="clip-check">✓</div>
+      <div class="clip-info">
+        <div style="font-size:.75rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${clip.original_name}">${clip.original_name}</div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <span style="font-size:.68rem;color:var(--text3)">⏱️ ${clip.duration}s</span>
+          <span style="font-size:.68rem;color:var(--text3)">📦 ${clip.size_mb}MB</span>
+          ${clip.has_audio ? '<span style="font-size:.68rem;color:var(--green)">🔊</span>' : '<span style="font-size:.68rem;color:var(--text3)">🔇</span>'}
+        </div>
+        ${clip.width ? `<div style="font-size:.66rem;color:var(--text3);margin-top:2px">${clip.width}×${clip.height}</div>` : ""}
+      </div>
+      <button class="btn btn-danger btn-xs" style="position:absolute;bottom:8px;right:8px;padding:4px 8px" onclick="removeClip(event,'${clip.id}')">✕</button>
+    </div>
+  `).join("");
+}
+
+function toggleClip(id) {
+  if (selectedClips.has(id)) selectedClips.delete(id);
+  else selectedClips.add(id);
+  document.getElementById("clip-"+id)?.classList.toggle("selected", selectedClips.has(id));
+  updateEditBtn();
+}
+
+function removeClip(e, id) {
+  e.stopPropagation();
+  uploadedClips = uploadedClips.filter(c => c.id !== id);
+  selectedClips.delete(id);
+  renderClips();
+  updateEditBtn();
+}
+
+function selectAll() { uploadedClips.forEach(c => selectedClips.add(c.id)); renderClips(); updateEditBtn(); }
+function deselectAll() { selectedClips.clear(); renderClips(); updateEditBtn(); }
+function clearAll() { uploadedClips=[]; selectedClips.clear(); renderClips(); updateEditBtn(); }
+
+function updateEditBtn() {
+  document.getElementById("edit-btn").disabled = selectedClips.size === 0;
+}
+
+function switchMode(mode) {
+  editMode = mode;
+  document.getElementById("tab-auto").classList.toggle("active", mode==="auto");
+  document.getElementById("tab-manual").classList.toggle("active", mode==="manual");
+  document.getElementById("manual-controls").style.display = mode==="manual" ? "block" : "none";
+}
+
+function toggleAudioUpload() {
+  document.getElementById("audio-upload-area").style.display =
+    document.getElementById("use-custom-audio").checked ? "block" : "none";
+}
+
+async function uploadAudioFile(file) {
+  if (!file) return;
+  const fd = new FormData();
+  fd.append("file", file);
+  document.getElementById("audio-upload-info").textContent = "Uploading...";
+  try {
+    const r = await fetch("/api/audio/upload", {method:"POST", body:fd});
+    const d = await r.json();
+    customAudioPath = d.path;
+    document.getElementById("audio-upload-info").textContent = `✅ ${file.name} (${d.size_mb}MB)`;
+    showToast("Audio uploaded!","success");
+  } catch(e) {
+    document.getElementById("audio-upload-info").textContent = "❌ Upload failed";
+    showToast("Audio upload failed","error");
+  }
+}
+
+async function startEdit() {
+  const clips = uploadedClips.filter(c => selectedClips.has(c.id));
+  if (!clips.length) { showToast("Select at least one clip","error"); return; }
+
+  const payload = {
+    clip_paths: clips.map(c => c.path),
+    size: document.getElementById("output-size").value,
+    color_preset: selectedColorPreset,
+    transition: document.getElementById("transition-type").value,
+    max_clip_duration: parseFloat(document.getElementById("max-clip-dur").value),
+    add_music: document.getElementById("add-music").checked,
+    music_mood: document.getElementById("music-mood").value,
+    music_volume: 0.15,
+    add_captions: false,
+    sizes: [document.getElementById("output-size").value],
+  };
+
+  try {
+    const r = await fetch("/api/clips/edit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error);
+    currentEditJobId = d.job_id;
+    openEditModal(d.job_id);
+    if (socket) socket.emit("subscribe_job",{job_id:d.job_id});
+    else pollEdit(d.job_id);
+    showToast("🚀 Edit started!","success");
+  } catch(e) { showToast("Error: "+e.message,"error"); }
+}
+
+function openEditModal(jobId) {
+  document.getElementById("edit-job-id").textContent = "Job: " + jobId;
+  document.getElementById("edit-modal").classList.add("open");
+  document.getElementById("edit-dash-btn").style.display = "none";
+  document.getElementById("edit-fill").style.width = "0%";
+  document.getElementById("edit-pct").textContent = "0%";
+  document.getElementById("edit-msg").textContent = "Starting...";
+}
+
+function onEditProgress(data) {
+  if (data.job_id !== currentEditJobId) return;
+  const pct = data.progress || 0;
+  document.getElementById("edit-fill").style.width = pct+"%";
+  document.getElementById("edit-pct").textContent = pct+"%";
+  document.getElementById("edit-msg").textContent = data.message || "";
+
+  const STEP_MAP = {editing:"es-editing",music:"es-music",captions:"es-captions",finalizing:"es-finalizing"};
+  const step = data.step;
+  Object.entries(STEP_MAP).forEach(([k,id]) => {
+    const el = document.getElementById(id);
+    const msg = document.getElementById(id+"-msg");
+    const icon = document.getElementById(id+"-icon");
+    if (!el) return;
+    if (k === step) {
+      el.classList.add("active"); el.classList.remove("done");
+      if (icon) icon.innerHTML = '<span class="spin">🔄</span>';
+      if (msg) msg.textContent = data.message;
+    } else if (pct > 50 && k !== step) {
+      el.classList.add("done"); el.classList.remove("active");
+      if (icon) icon.textContent = "✅";
+    }
+  });
+}
+
+function onEditComplete(data) {
+  if (data.job_id !== currentEditJobId) return;
+  document.getElementById("edit-fill").style.width = "100%";
+  document.getElementById("edit-pct").textContent = "100%";
+  document.getElementById("edit-msg").textContent = "🎉 Edit complete!";
+  document.getElementById("edit-dash-btn").style.display = "flex";
+  Object.keys({editing:1,music:1,captions:1,finalizing:1}).forEach(k => {
+    const id = "es-"+k;
+    document.getElementById(id)?.classList.add("done");
+    const icon = document.getElementById(id+"-icon");
+    if (icon) icon.textContent = "✅";
+  });
+  showToast("🎉 Your edit is ready! Download from Dashboard.","success",8000);
+}
+
+function onEditFailed(data) {
+  if (data.job_id !== currentEditJobId) return;
+  document.getElementById("edit-msg").textContent = "❌ " + data.error;
+  showToast("Edit failed: "+data.error,"error",8000);
+}
+
+async function pollEdit(jobId) {
+  const iv = setInterval(async () => {
+    const r = await fetch("/api/job/"+jobId);
+    const j = await r.json();
+    onEditProgress({job_id:jobId,step:j.current_step,progress:j.progress,message:j.message});
+    if (j.status==="completed"){clearInterval(iv);onEditComplete({job_id:jobId});}
+    else if (j.status==="failed"){clearInterval(iv);onEditFailed({job_id:jobId,error:j.error});}
+  }, 2500);
+}
+
+document.getElementById("edit-modal").addEventListener("click",e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove("open");});
+</script>
+{% endblock %}

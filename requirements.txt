@@ -1,0 +1,31 @@
+# ── Web Framework ────────────────────────────────────────────
+flask==3.0.2
+flask-socketio==5.3.6
+python-dotenv==1.0.1
+gunicorn==22.0.0
+eventlet==0.36.1
+
+# ── 100% FREE TTS ────────────────────────────────────────────
+edge-tts==6.1.9
+gTTS==2.5.1
+
+# ── Local Whisper (Free Speech-to-Text) ─────────────────────
+openai-whisper==20231117
+
+# ── Language Detection (Free) ────────────────────────────────
+langdetect==1.0.9
+
+# ── Video / Audio Processing ─────────────────────────────────
+moviepy==1.0.3
+imageio==2.34.1
+imageio-ffmpeg==0.4.9
+pydub==0.25.1
+
+# ── Image Processing ─────────────────────────────────────────
+Pillow==10.3.0
+numpy==1.26.4
+
+# ── HTTP & Utilities ─────────────────────────────────────────
+requests==2.31.0
+python-slugify==8.0.4
+werkzeug==3.0.3

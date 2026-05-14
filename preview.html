@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VideoGen AI — Script to Video Platform</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a14; --bg2: #10101e; --bg3: #16162a; --card: #1a1a2e; --card2: #1f1f38;
+      --border: #2a2a4a; --primary: #6c63ff; --accent: #ff6b9d; --green: #00d4aa;
+      --yellow: #ffd60a; --red: #ff4757; --orange: #ff6b35;
+      --text: #e8e8f0; --text2: #9898b8; --text3: #6060a0;
+      --glow: 0 0 30px rgba(108,99,255,0.3); --r: 16px; --r2: 24px;
+      --t: 0.2s cubic-bezier(0.4,0,0.2,1);
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+    ::-webkit-scrollbar { width:6px; }
+    ::-webkit-scrollbar-track { background:var(--bg); }
+    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+    ::-webkit-scrollbar-thumb:hover { background:var(--primary); }
+
+    /* NAV */
+    nav { position:fixed; top:0; left:0; right:0; z-index:100; height:64px; background:rgba(10,10,20,0.85); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 28px; gap:28px; }
+    .nav-logo { display:flex; align-items:center; gap:10px; font-size:1.2rem; font-weight:800; color:var(--text); text-decoration:none; }
+    .nav-logo-icon { width:36px; height:36px; background:linear-gradient(135deg,var(--primary),var(--accent)); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
+    .nav-logo span { color:var(--primary); }
+    .nav-links { display:flex; align-items:center; gap:4px; }
+    .nav-link { text-decoration:none; color:var(--text2); padding:7px 14px; border-radius:8px; font-size:0.875rem; font-weight:500; transition:var(--t); cursor:pointer; }
+    .nav-link:hover,.nav-link.active { color:var(--text); background:var(--card); }
+    .nav-link.active { color:var(--primary); }
+    .nav-right { margin-left:auto; display:flex; align-items:center; gap:12px; }
+    .status-pill { display:flex; align-items:center; gap:8px; padding:6px 12px; background:rgba(0,212,170,0.1); border:1px solid rgba(0,212,170,0.3); border-radius:100px; font-size:0.78rem; font-weight:600; color:var(--green); }
+    .sdot { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:pdot 2s ease-in-out infinite; }
+    @keyframes pdot { 0%,100%{opacity:1}50%{opacity:.4} }
+
+    /* BUTTONS */
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 20px; border-radius:var(--r); border:none; font-size:0.875rem; font-weight:600; cursor:pointer; transition:var(--t); text-decoration:none; white-space:nowrap; }
+    .btn-primary { background:linear-gradient(135deg,var(--primary),#8b5cf6); color:white; box-shadow:0 4px 20px rgba(108,99,255,.4); }
+    .btn-primary:hover { transform:translateY(-1px); box-shadow:0 8px 30px rgba(108,99,255,.5); }
+    .btn-ghost { background:transparent; color:var(--text2); border:1px solid var(--border); }
+    .btn-ghost:hover { color:var(--text); border-color:var(--primary); background:rgba(108,99,255,.08); }
+    .btn-success { background:linear-gradient(135deg,#00d4aa,#00b894); color:white; }
+    .btn-lg { padding:14px 28px; font-size:1rem; }
+    .btn-sm { padding:7px 14px; font-size:0.8rem; }
+    .btn:disabled { opacity:.5; cursor:not-allowed; transform:none!important; }
+
+    /* CARDS */
+    .card { background:var(--card); border:1px solid var(--border); border-radius:var(--r2); padding:24px; }
+    .card-glow { box-shadow:0 0 40px rgba(108,99,255,.12); }
+
+    /* LAYOUT */
+    .page { margin-top:64px; min-height:calc(100vh - 64px); }
+    .container { max-width:1400px; margin:0 auto; padding:32px 24px; }
+
+    /* TYPOGRAPHY */
+    h1 { font-size:2.5rem; font-weight:800; line-height:1.15; }
+    h2 { font-size:1.75rem; font-weight:700; }
+    h3 { font-size:1.2rem; font-weight:700; }
+    h4 { font-size:1rem; font-weight:600; }
+    p { color:var(--text2); line-height:1.7; }
+    .gradient-text { background:linear-gradient(135deg,var(--primary),var(--accent)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+    /* BADGES */
+    .badge { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:100px; font-size:0.75rem; font-weight:600; }
+    .badge-primary { background:rgba(108,99,255,.15); color:var(--primary); }
+    .badge-green { background:rgba(0,212,170,.15); color:var(--green); }
+    .badge-yellow { background:rgba(255,214,10,.15); color:var(--yellow); }
+    .badge-red { background:rgba(255,71,87,.15); color:var(--red); }
+    .badge-orange { background:rgba(255,107,53,.15); color:var(--orange); }
+
+    /* FORMS */
+    .form-group { display:flex; flex-direction:column; gap:8px; }
+    .form-label { font-size:0.875rem; font-weight:600; color:var(--text); }
+    .form-input,.form-select,.form-textarea { width:100%; background:var(--bg2); border:1.5px solid var(--border); border-radius:var(--r); padding:12px 14px; color:var(--text); font-size:0.9rem; transition:var(--t); outline:none; font-family:inherit; }
+    .form-input:focus,.form-select:focus,.form-textarea:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(108,99,255,.15); }
+    .form-textarea { resize:vertical; min-height:200px; line-height:1.7; }
+    .form-range { width:100%; accent-color:var(--primary); cursor:pointer; }
+    option { background:var(--card); }
+    .toggle { position:relative; width:44px; height:24px; cursor:pointer; }
+    .toggle input { opacity:0; width:0; height:0; }
+    .toggle-slider { position:absolute; top:0; left:0; right:0; bottom:0; background:var(--border); border-radius:12px; transition:var(--t); }
+    .toggle-slider::before { content:""; position:absolute; width:18px; height:18px; left:3px; top:3px; background:white; border-radius:50%; transition:var(--t); }
+    .toggle input:checked+.toggle-slider { background:var(--primary); }
+    .toggle input:checked+.toggle-slider::before { transform:translateX(20px); }
+
+    /* PROGRESS */
+    .progress-bar { width:100%; height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+    .progress-fill { height:100%; background:linear-gradient(90deg,var(--primary),var(--accent)); border-radius:3px; transition:width .4s ease; }
+
+    /* TABS */
+    .tabs { display:flex; gap:4px; padding:4px; background:var(--bg2); border-radius:var(--r); margin-bottom:24px; }
+    .tab { flex:1; padding:10px 16px; border-radius:12px; text-align:center; font-size:0.875rem; font-weight:600; cursor:pointer; color:var(--text2); transition:var(--t); border:none; background:transparent; }
+    .tab.active { background:var(--card); color:var(--text); box-shadow:0 2px 8px rgba(0,0,0,.3); }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; animation:fadeIn .3s ease; }
+
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .spin { animation:spin 1s linear infinite; display:inline-block; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.6} }
+
+    /* SIZE CHIPS */
+    .size-chip { display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg2); border:1.5px solid var(--border); border-radius:var(--r); cursor:pointer; transition:var(--t); user-select:none; }
+    .size-chip:hover { border-color:var(--primary); }
+    .size-chip.selected { border-color:var(--primary); background:rgba(108,99,255,.08); }
+    .size-check { width:16px; height:16px; border-radius:50%; border:1.5px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:.65rem; transition:var(--t); }
+    .size-chip.selected .size-check { background:var(--primary); border-color:var(--primary); color:white; }
+
+    /* PROGRESS STEPS */
+    .pstep { padding:11px 14px; border-radius:var(--r); background:var(--bg2); border:1px solid var(--border); transition:var(--t); }
+    .pstep.active { border-color:var(--primary); background:rgba(108,99,255,.08); }
+    .pstep.done { border-color:var(--green); background:rgba(0,212,170,.06); }
+
+    /* FEATURE GRID */
+    .feature-card { text-align:center; padding:20px 14px; background:var(--card); border:1px solid var(--border); border-radius:var(--r); transition:var(--t); }
+    .feature-card:hover { border-color:var(--primary); transform:translateY(-3px); box-shadow:0 8px 24px rgba(108,99,255,.15); }
+
+    /* JOB CARDS */
+    .job-card { padding:18px; border:1px solid var(--border); border-radius:var(--r); background:var(--bg2); transition:var(--t); cursor:pointer; }
+    .job-card:hover { border-color:var(--primary); transform:translateX(2px); }
+    .job-card.completed { border-left:3px solid var(--green); }
+    .job-card.processing { border-left:3px solid var(--yellow); }
+    .job-card.failed { border-left:3px solid var(--red); }
+
+    /* TOAST */
+    #toasts { position:fixed; bottom:24px; right:24px; z-index:1000; display:flex; flex-direction:column; gap:8px; }
+    .toast { display:flex; align-items:center; gap:12px; padding:14px 18px; background:var(--card2); border:1px solid var(--border); border-radius:var(--r); box-shadow:0 8px 32px rgba(0,0,0,.5); font-size:.875rem; max-width:360px; animation:slideIn .3s ease; }
+    .toast.success { border-left:3px solid var(--green); }
+    .toast.error { border-left:3px solid var(--red); }
+    .toast.info { border-left:3px solid var(--primary); }
+    @keyframes slideIn { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
+
+    /* MODAL */
+    .modal-overlay { display:none; position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.7); backdrop-filter:blur(8px); align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+
+    /* GRID HELPERS */
+    .g2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .g3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+    .g4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+    .divider { height:1px; background:var(--border); margin:20px 0; }
+
+    @media(max-width:900px) {
+      .g2,.g3,.g4 { grid-template-columns:1fr; }
+      h1 { font-size:1.8rem; }
+      .main-layout { grid-template-columns:1fr!important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-icon">🎬</div>
+    Video<span>Gen</span>
+  </div>
+  <div class="nav-links">
+    <div class="nav-link active" onclick="showPage('studio')">Studio</div>
+    <div class="nav-link" onclick="showPage('dashboard')">Dashboard</div>
+    <div class="nav-link" onclick="showPage('settings')">Settings</div>
+  </div>
+  <div class="nav-right">
+    <div class="status-pill"><div class="sdot"></div>APIs Ready</div>
+  </div>
+</nav>
+
+<div id="toasts"></div>
+
+<!-- ════════════════════ STUDIO PAGE ════════════════════ -->
+<div id="page-studio" class="page">
+  <div class="container">
+    <!-- Hero -->
+    <div style="text-align:center;margin-bottom:44px;padding-top:12px">
+      <div style="display:inline-flex;align-items:center;gap:8px;padding:7px 16px;background:rgba(108,99,255,.12);border:1px solid rgba(108,99,255,.3);border-radius:100px;font-size:.8rem;font-weight:600;color:var(--primary);margin-bottom:18px">✨ AI-Powered Video Creation Platform</div>
+      <h1 style="margin-bottom:14px">Turn Your Script Into a<br/><span class="gradient-text">Full-Length Video</span> in Minutes</h1>
+      <p style="max-width:580px;margin:0 auto;font-size:1.02rem">Paste your script, choose your settings, and let AI handle everything — B-roll footage, voiceover, music, captions, transitions & more.</p>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="main-layout" style="display:grid;grid-template-columns:1fr 370px;gap:22px;align-items:start">
+
+      <!-- LEFT: Script + Analysis -->
+      <div style="display:flex;flex-direction:column;gap:20px">
+
+        <!-- Script Card -->
+        <div class="card card-glow">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+            <div>
+              <h3 style="margin-bottom:3px">📝 Your Script</h3>
+              <p style="font-size:.82rem;margin:0">Paste your full video script — AI handles the rest!</p>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-ghost btn-sm" onclick="loadSample()">📋 Sample</button>
+              <button class="btn btn-ghost btn-sm" onclick="clearScript()">🗑️</button>
+            </div>
+          </div>
+
+          <textarea id="script-input" class="form-textarea" style="min-height:300px;font-size:.92rem"
+            placeholder="Paste your script here...&#10;&#10;Welcome to our journey through Iceland...&#10;From the mighty waterfalls to the Northern Lights..."
+            oninput="updateStats()"></textarea>
+
+          <!-- Stats -->
+          <div style="display:flex;flex-wrap:wrap;gap:14px;padding:10px 0;border-top:1px solid var(--border);margin-top:8px">
+            <span style="font-size:.8rem;color:var(--text3)">📄 <span id="chars">0</span> chars</span>
+            <span style="font-size:.8rem;color:var(--text3)">📝 <span id="words">0</span> words</span>
+            <span style="font-size:.8rem;color:var(--text3)">⏱️ <span id="dur">~0s</span> video</span>
+            <span id="mood-badge" style="display:none;margin-left:auto" class="badge badge-primary" id="mood-disp"></span>
+          </div>
+
+          <!-- Actions -->
+          <div style="display:flex;gap:10px;margin-top:14px">
+            <button class="btn btn-ghost" onclick="analyzeScript()">🔍 Analyze</button>
+            <button class="btn btn-primary btn-lg" style="flex:1" onclick="generateVideo()" id="gen-btn">🚀 Generate Video</button>
+          </div>
+        </div>
+
+        <!-- Analysis Panel -->
+        <div id="analysis-panel" class="card" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <h3>🧠 AI Script Analysis</h3>
+            <button class="btn btn-ghost btn-sm" onclick="this.closest('#analysis-panel').style.display='none'">✕</button>
+          </div>
+          <div id="analysis-output"></div>
+        </div>
+
+        <!-- Features Strip -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+          <div class="feature-card"><div style="font-size:1.6rem;margin-bottom:6px">🔍</div><div style="font-size:.8rem;font-weight:600;margin-bottom:3px">Script Analysis</div><div style="font-size:.73rem;color:var(--text3)">AI scene detection</div></div>
+          <div class="feature-card"><div style="font-size:1.6rem;margin-bottom:6px">🎬</div><div style="font-size:.8rem;font-weight:600;margin-bottom:3px">B-Roll Auto-Fetch</div><div style="font-size:.73rem;color:var(--text3)">Pexels + Pixabay</div></div>
+          <div class="feature-card"><div style="font-size:1.6rem;margin-bottom:6px">🎤</div><div style="font-size:.8rem;font-weight:600;margin-bottom:3px">AI Voiceover</div><div style="font-size:.73rem;color:var(--text3)">ElevenLabs & more</div></div>
+          <div class="feature-card"><div style="font-size:1.6rem;margin-bottom:6px">📝</div><div style="font-size:.8rem;font-weight:600;margin-bottom:3px">Auto Captions</div><div style="font-size:.73rem;color:var(--text3)">Whisper-powered</div></div>
+          <div class="feature-card"><div style="font-size:1.6rem;margin-bottom:6px">🎵</div><div style="font-size:.8rem;font-weight:600;margin-bottom:3px">Music & SFX</div><div style="font-size:.73rem;color:var(--text3)">Mood-matched</div></div>
+          <div class="feature-card"><div style="font-size:1.6rem;margin-bottom:6px">✨</div><div style="font-size:.8rem;font-weight:600;margin-bottom:3px">Transitions</div><div style="font-size:.73rem;color:var(--text3)">Scene-matched</div></div>
+          <div class="feature-card"><div style="font-size:1.6rem;margin-bottom:6px">📐</div><div style="font-size:.8rem;font-weight:600;margin-bottom:3px">Multi-Format</div><div style="font-size:.73rem;color:var(--text3)">9:16, 16:9, 1:1</div></div>
+          <div class="feature-card"><div style="font-size:1.6rem;margin-bottom:6px">⬇️</div><div style="font-size:.8rem;font-weight:600;margin-bottom:3px">Download Ready</div><div style="font-size:.73rem;color:var(--text3)">MP4 instant DL</div></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Settings -->
+      <div style="display:flex;flex-direction:column;gap:14px;position:sticky;top:78px">
+
+        <!-- Output Format -->
+        <div class="card">
+          <h4 style="margin-bottom:12px">📐 Output Format</h4>
+          <p style="font-size:.78rem;color:var(--text3);margin-bottom:10px">Select all sizes to generate</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px" id="size-chips">
+            <!-- rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Voice -->
+        <div class="card">
+          <h4 style="margin-bottom:12px">🎤 Voiceover</h4>
+          <div style="display:flex;flex-direction:column;gap:11px">
+            <div class="form-group">
+              <label class="form-label">Provider</label>
+              <select id="voice-provider" class="form-select" onchange="updateVoices()">
+                <option value="openai">OpenAI TTS</option>
+                <option value="elevenlabs">ElevenLabs</option>
+                <option value="google">Google Cloud TTS</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Voice</label>
+              <select id="voice-name" class="form-select"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="display:flex;justify-content:space-between">Speed <span style="color:var(--primary)" id="spd-lbl">1.0x</span></label>
+              <input type="range" class="form-range" id="voice-speed" min="0.5" max="2" step="0.05" value="1" oninput="document.getElementById('spd-lbl').textContent=this.value+'x'"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Music -->
+        <div class="card">
+          <h4 style="margin-bottom:12px">🎵 Music & Audio</h4>
+          <div style="display:flex;flex-direction:column;gap:11px">
+            <div class="form-group">
+              <label class="form-label" style="display:flex;justify-content:space-between">BGM Volume <span style="color:var(--primary)" id="mvol-lbl">15%</span></label>
+              <input type="range" class="form-range" min="0" max="100" step="5" value="15" oninput="document.getElementById('mvol-lbl').textContent=this.value+'%'"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="display:flex;justify-content:space-between">Voice Volume <span style="color:var(--primary)" id="vvol-lbl">100%</span></label>
+              <input type="range" class="form-range" min="0" max="100" step="5" value="100" oninput="document.getElementById('vvol-lbl').textContent=this.value+'%'"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Captions -->
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <h4>📝 Captions</h4>
+            <label class="toggle"><input type="checkbox" id="cap-toggle" checked onchange="toggleCaps()"/><div class="toggle-slider"></div></label>
+          </div>
+          <div id="cap-settings" style="display:flex;flex-direction:column;gap:11px">
+            <div class="form-group">
+              <label class="form-label">Position</label>
+              <select class="form-select"><option>Bottom</option><option>Top</option><option>Center</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Font Size</label>
+              <select class="form-select"><option>Small</option><option selected>Medium</option><option>Large</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Highlight Color</label>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="color" value="#FFFF00" style="width:44px;height:34px;border:1.5px solid var(--border);border-radius:8px;background:transparent;cursor:pointer" id="cap-color" oninput="document.getElementById('cap-color-lbl').textContent=this.value.toUpperCase()"/>
+                <span style="font-size:.83rem;color:var(--text2)" id="cap-color-lbl">#FFFF00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ DASHBOARD PAGE ════════════════════ -->
+<div id="page-dashboard" class="page" style="display:none">
+  <div class="container">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-top:12px">
+      <div><h1 style="margin-bottom:6px">📊 Dashboard</h1><p>Track your video jobs & download completed videos</p></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost" onclick="renderDemoJobs()">🔄 Refresh</button>
+        <button class="btn btn-primary" onclick="showPage('studio')">+ New Video</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="g4" style="margin-bottom:24px">
+      <div class="card" style="text-align:center;padding:18px"><div style="font-size:2rem;font-weight:800;color:var(--primary)">12</div><div style="font-size:.8rem;color:var(--text3);margin-top:4px">Total Jobs</div></div>
+      <div class="card" style="text-align:center;padding:18px"><div style="font-size:2rem;font-weight:800;color:var(--green)">9</div><div style="font-size:.8rem;color:var(--text3);margin-top:4px">Completed</div></div>
+      <div class="card" style="text-align:center;padding:18px"><div style="font-size:2rem;font-weight:800;color:var(--yellow)">2</div><div style="font-size:.8rem;color:var(--text3);margin-top:4px">Processing</div></div>
+      <div class="card" style="text-align:center;padding:18px"><div style="font-size:2rem;font-weight:800;color:var(--red)">1</div><div style="font-size:.8rem;color:var(--text3);margin-top:4px">Failed</div></div>
+    </div>
+
+    <!-- Jobs -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <h3>Recent Jobs</h3>
+        <select class="form-select" style="width:auto;padding:7px 12px;font-size:.82rem">
+          <option>All Status</option><option>Completed</option><option>Processing</option>
+        </select>
+      </div>
+      <div id="jobs-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ SETTINGS PAGE ════════════════════ -->
+<div id="page-settings" class="page" style="display:none">
+  <div class="container" style="max-width:880px">
+    <div style="margin-bottom:28px;padding-top:12px"><h1 style="margin-bottom:8px">⚙️ Settings</h1><p>Configure your API keys and preferences</p></div>
+
+    <!-- API Status -->
+    <div class="card card-glow" style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+        <div style="font-size:1.4rem">🔌</div>
+        <div><h3 style="margin-bottom:2px">API Connection Status</h3><p style="font-size:.82rem;margin:0">Real-time status of connected services</p></div>
+        <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="showToast('Status refreshed!','success')">🔄 Refresh</button>
+      </div>
+      <div class="g3" style="gap:12px">
+        <div style="padding:14px;background:var(--bg2);border:1px solid var(--green);border-radius:var(--r)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span>🤖</span><strong>OpenAI</strong><div style="width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);margin-left:auto"></div></div>
+          <div style="font-size:.76rem;color:var(--text3)">GPT-4 + Whisper + TTS</div>
+          <span class="badge badge-green" style="margin-top:8px">✅ Connected</span>
+        </div>
+        <div style="padding:14px;background:var(--bg2);border:1px solid var(--green);border-radius:var(--r)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span>🎤</span><strong>ElevenLabs</strong><div style="width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);margin-left:auto"></div></div>
+          <div style="font-size:.76rem;color:var(--text3)">Premium AI Voiceover</div>
+          <span class="badge badge-green" style="margin-top:8px">✅ Connected</span>
+        </div>
+        <div style="padding:14px;background:var(--bg2);border:1px solid var(--green);border-radius:var(--r)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span>🎬</span><strong>Pexels</strong><div style="width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);margin-left:auto"></div></div>
+          <div style="font-size:.76rem;color:var(--text3)">B-Roll Video Footage</div>
+          <span class="badge badge-green" style="margin-top:8px">✅ Connected</span>
+        </div>
+        <div style="padding:14px;background:var(--bg2);border:1px solid var(--green);border-radius:var(--r)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span>🖼️</span><strong>Pixabay</strong><div style="width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);margin-left:auto"></div></div>
+          <div style="font-size:.76rem;color:var(--text3)">B-Roll + Music</div>
+          <span class="badge badge-green" style="margin-top:8px">✅ Connected</span>
+        </div>
+        <div style="padding:14px;background:var(--bg2);border:1px solid rgba(255,71,87,.4);border-radius:var(--r)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span>🔊</span><strong>Freesound</strong><div style="width:9px;height:9px;border-radius:50%;background:var(--red);margin-left:auto"></div></div>
+          <div style="font-size:.76rem;color:var(--text3)">Sound Effects</div>
+          <span class="badge badge-red" style="margin-top:8px">❌ Not configured</span>
+        </div>
+        <div style="padding:14px;background:var(--bg2);border:1px solid rgba(255,71,87,.4);border-radius:var(--r)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span>🗣️</span><strong>Google TTS</strong><div style="width:9px;height:9px;border-radius:50%;background:var(--red);margin-left:auto"></div></div>
+          <div style="font-size:.76rem;color:var(--text3)">Alternative Voiceover</div>
+          <span class="badge badge-red" style="margin-top:8px">❌ Not configured</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- .env Template -->
+    <div class="card" style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+        <div style="font-size:1.4rem">📄</div>
+        <div><h3 style="margin-bottom:2px">Configuration (.env)</h3><p style="font-size:.82rem;margin:0">Copy into your <code style="background:var(--bg2);padding:2px 6px;border-radius:4px">.env</code> file</p></div>
+        <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="copyEnv()">📋 Copy</button>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:18px;font-family:monospace;font-size:.82rem;line-height:2;overflow-x:auto">
+        <div><span style="color:var(--text3)"># Flask</span></div>
+        <div><span style="color:var(--yellow)">SECRET_KEY</span>=<span style="color:var(--green)">your-random-secret-key</span></div>
+        <div><span style="color:var(--yellow)">PORT</span>=<span style="color:var(--green)">5000</span></div>
+        <div><br/><span style="color:var(--text3)"># OpenAI — Required</span></div>
+        <div><span style="color:var(--yellow)">OPENAI_API_KEY</span>=<span style="color:var(--accent)">sk-proj-...</span></div>
+        <div><br/><span style="color:var(--text3)"># ElevenLabs — Optional premium TTS</span></div>
+        <div><span style="color:var(--yellow)">ELEVENLABS_API_KEY</span>=<span style="color:var(--accent)">your-key</span></div>
+        <div><br/><span style="color:var(--text3)"># Pexels — Free B-Roll footage</span></div>
+        <div><span style="color:var(--yellow)">PEXELS_API_KEY</span>=<span style="color:var(--accent)">your-key</span></div>
+        <div><br/><span style="color:var(--text3)"># Pixabay — Free B-Roll + Music</span></div>
+        <div><span style="color:var(--yellow)">PIXABAY_API_KEY</span>=<span style="color:var(--accent)">your-key</span></div>
+        <div><br/><span style="color:var(--text3)"># Freesound — Free SFX</span></div>
+        <div><span style="color:var(--yellow)">FREESOUND_API_KEY</span>=<span style="color:var(--accent)">your-key</span></div>
+      </div>
+    </div>
+
+    <!-- API Links -->
+    <div class="card">
+      <h3 style="margin-bottom:16px">🔗 Get Your API Keys (all free or freemium)</h3>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:12px;padding:13px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r)">
+          <span style="font-size:1.3rem">🤖</span>
+          <div style="flex:1"><strong>OpenAI</strong> <span style="color:var(--text3);font-size:.82rem">— GPT-4 + Whisper + TTS (Required)</span><div style="font-size:.76rem;color:var(--text3);margin-top:2px">~$0.01–0.05 per video</div></div>
+          <span style="font-size:.82rem;padding:6px 12px;background:rgba(108,99,255,.1);color:var(--primary);border-radius:8px;font-weight:600">platform.openai.com</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:13px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r)">
+          <span style="font-size:1.3rem">🎤</span>
+          <div style="flex:1"><strong>ElevenLabs</strong> <span style="color:var(--text3);font-size:.82rem">— Realistic AI Voices</span><div style="font-size:.76rem;color:var(--text3);margin-top:2px">Free: 10,000 chars/month</div></div>
+          <span style="font-size:.82rem;padding:6px 12px;background:rgba(108,99,255,.1);color:var(--primary);border-radius:8px;font-weight:600">elevenlabs.io</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:13px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r)">
+          <span style="font-size:1.3rem">🎬</span>
+          <div style="flex:1"><strong>Pexels</strong> <span style="color:var(--text3);font-size:.82rem">— B-Roll Video Footage</span><div style="font-size:.76rem;color:var(--text3);margin-top:2px">100% Free • 200 req/hour</div></div>
+          <span style="font-size:.82rem;padding:6px 12px;background:rgba(0,212,170,.1);color:var(--green);border-radius:8px;font-weight:600">pexels.com/api</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:13px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r)">
+          <span style="font-size:1.3rem">🖼️</span>
+          <div style="flex:1"><strong>Pixabay</strong> <span style="color:var(--text3);font-size:.82rem">— B-Roll + Background Music</span><div style="font-size:.76rem;color:var(--text3);margin-top:2px">100% Free • 100 req/min</div></div>
+          <span style="font-size:.82rem;padding:6px 12px;background:rgba(0,212,170,.1);color:var(--green);border-radius:8px;font-weight:600">pixabay.com/api</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:13px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r)">
+          <span style="font-size:1.3rem">🔊</span>
+          <div style="flex:1"><strong>Freesound</strong> <span style="color:var(--text3);font-size:.82rem">— Sound Effects Library</span><div style="font-size:.76rem;color:var(--text3);margin-top:2px">100% Free • 500,000+ sounds</div></div>
+          <span style="font-size:.82rem;padding:6px 12px;background:rgba(0,212,170,.1);color:var(--green);border-radius:8px;font-weight:600">freesound.org/api</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ PROGRESS MODAL ════════════════════ -->
+<div id="progress-modal" class="modal-overlay">
+  <div class="card" style="width:560px;max-width:95vw;padding:34px">
+    <div style="text-align:center;margin-bottom:26px">
+      <div style="font-size:2.8rem;margin-bottom:10px">🎬</div>
+      <h2 style="margin-bottom:6px">Creating Your Video</h2>
+      <p style="font-size:.82rem;color:var(--text3)" id="prog-id">Job ID: generating...</p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:22px" id="prog-steps">
+      <div class="pstep" id="ps-analyzing"><div style="display:flex;align-items:center;gap:10px"><span>🧠</span><div style="flex:1"><div style="font-size:.83rem;font-weight:600">Analyzing Script</div><div style="font-size:.75rem;color:var(--text3)" id="ps-analyzing-msg">Waiting...</div></div><span id="ps-analyzing-icon">⏳</span></div></div>
+      <div class="pstep" id="ps-broll"><div style="display:flex;align-items:center;gap:10px"><span>🎥</span><div style="flex:1"><div style="font-size:.83rem;font-weight:600">Fetching B-Roll Footage</div><div style="font-size:.75rem;color:var(--text3)" id="ps-broll-msg">Waiting...</div></div><span id="ps-broll-icon">⏳</span></div></div>
+      <div class="pstep" id="ps-voiceover"><div style="display:flex;align-items:center;gap:10px"><span>🎤</span><div style="flex:1"><div style="font-size:.83rem;font-weight:600">Generating Voiceover</div><div style="font-size:.75rem;color:var(--text3)" id="ps-voiceover-msg">Waiting...</div></div><span id="ps-voiceover-icon">⏳</span></div></div>
+      <div class="pstep" id="ps-music"><div style="display:flex;align-items:center;gap:10px"><span>🎵</span><div style="flex:1"><div style="font-size:.83rem;font-weight:600">Adding Music & SFX</div><div style="font-size:.75rem;color:var(--text3)" id="ps-music-msg">Waiting...</div></div><span id="ps-music-icon">⏳</span></div></div>
+      <div class="pstep" id="ps-captions"><div style="display:flex;align-items:center;gap:10px"><span>📝</span><div style="flex:1"><div style="font-size:.83rem;font-weight:600">Generating Captions</div><div style="font-size:.75rem;color:var(--text3)" id="ps-captions-msg">Waiting...</div></div><span id="ps-captions-icon">⏳</span></div></div>
+      <div class="pstep" id="ps-compose"><div style="display:flex;align-items:center;gap:10px"><span>🎞️</span><div style="flex:1"><div style="font-size:.83rem;font-weight:600">Composing Final Video</div><div style="font-size:.75rem;color:var(--text3)" id="ps-compose-msg">Waiting...</div></div><span id="ps-compose-icon">⏳</span></div></div>
+    </div>
+
+    <div style="margin-bottom:18px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:7px;font-size:.84rem">
+        <span style="color:var(--text2)" id="prog-msg">Starting pipeline...</span>
+        <strong style="color:var(--primary)" id="prog-pct">0%</strong>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('progress-modal').classList.remove('open');showToast('Running in background','info')">Minimize</button>
+      <button class="btn btn-primary" style="flex:1;display:none" id="view-dash-btn" onclick="showPage('dashboard');document.getElementById('progress-modal').classList.remove('open')">View Dashboard</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Data ──────────────────────────────────────────────────────────────────
+  const SIZES = {
+    "portrait_1080":   {icon:"📱",label:"Reels / TikTok",   sub:"1080×1920 • 9:16"},
+    "landscape_1080p": {icon:"📺",label:"YouTube 1080p",    sub:"1920×1080 • 16:9"},
+    "square_1080":     {icon:"⬛",label:"Instagram Post",   sub:"1080×1080 • 1:1"},
+    "landscape_720p":  {icon:"🖥️",label:"720p Landscape",  sub:"1280×720 • 16:9"},
+    "portrait_720":    {icon:"📱",label:"Stories 720p",     sub:"720×1280 • 9:16"},
+    "twitter":         {icon:"🐦",label:"Twitter/X Video",  sub:"1280×720"},
+  };
+
+  const VOICES = {
+    openai:     ["alloy","echo","fable","onyx","nova","shimmer"],
+    elevenlabs: ["rachel","domi","bella","adam","sam","elli","josh","arnold","callum","charlie"],
+    google:     ["en-US-Neural2-A","en-US-Neural2-C","en-US-Neural2-D","en-US-Wavenet-A","en-US-Wavenet-C"]
+  };
+
+  const STEP_ORDER = ["analyzing","broll","voiceover","sfx","music","captions","compose","finalizing"];
+
+  let currentJobId = null;
+  let simInterval = null;
+
+  // ── Page Routing ──────────────────────────────────────────────────────────
+  function showPage(page) {
+    ["studio","dashboard","settings"].forEach(p => {
+      document.getElementById("page-"+p).style.display = p===page ? "block" : "none";
+    });
+    document.querySelectorAll(".nav-link").forEach(l => {
+      l.classList.toggle("active", l.textContent.toLowerCase().includes(page));
+    });
+    if (page === "dashboard") renderDemoJobs();
+    window.scrollTo(0,0);
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  document.addEventListener("DOMContentLoaded", () => {
+    renderSizeChips();
+    updateVoices();
+    updateStats();
+    renderDemoJobs();
+  });
+
+  function renderSizeChips() {
+    const c = document.getElementById("size-chips");
+    c.innerHTML = "";
+    Object.entries(SIZES).forEach(([key, info]) => {
+      const sel = key === "portrait_1080" || key === "landscape_1080p";
+      const chip = document.createElement("div");
+      chip.className = "size-chip" + (sel ? " selected" : "");
+      chip.dataset.key = key;
+      chip.innerHTML = `
+        <span style="font-size:1rem">${info.icon}</span>
+        <div style="flex:1">
+          <div style="font-size:.76rem;font-weight:600">${info.label}</div>
+          <div style="font-size:.68rem;color:var(--text3)">${info.sub}</div>
+        </div>
+        <div class="size-check">${sel?"✓":""}</div>`;
+      chip.addEventListener("click", () => {
+        chip.classList.toggle("selected");
+        chip.querySelector(".size-check").textContent = chip.classList.contains("selected") ? "✓" : "";
+      });
+      c.appendChild(chip);
+    });
+  }
+
+  function updateVoices() {
+    const prov = document.getElementById("voice-provider").value;
+    const sel = document.getElementById("voice-name");
+    sel.innerHTML = (VOICES[prov]||[]).map(v=>`<option value="${v}">${v.charAt(0).toUpperCase()+v.slice(1)}</option>`).join("");
+  }
+
+  function updateStats() {
+    const t = document.getElementById("script-input").value;
+    const w = t.trim() ? t.trim().split(/\s+/).length : 0;
+    const d = Math.round((w/140)*60);
+    document.getElementById("chars").textContent = t.length.toLocaleString();
+    document.getElementById("words").textContent = w.toLocaleString();
+    document.getElementById("dur").textContent = d<60 ? `~${d}s` : `~${Math.floor(d/60)}m${d%60}s`;
+  }
+
+  function toggleCaps() {
+    document.getElementById("cap-settings").style.display = document.getElementById("cap-toggle").checked ? "flex" : "none";
+  }
+
+  function clearScript() {
+    document.getElementById("script-input").value = "";
+    updateStats();
+  }
+
+  function loadSample() {
+    document.getElementById("script-input").value = `Welcome to the world's most breathtaking travel destinations. Today, we're taking you on an unforgettable journey through Iceland — a land of fire, ice, and pure magic.
+
+Our adventure begins at the iconic Seljalandsfoss waterfall, where you can actually walk behind the cascading water. The roar of the falls, the mist on your face — it's an experience you'll never forget.
+
+From there, we travel to the legendary Golden Circle, home to the explosive Geysir hot spring that shoots boiling water 30 meters into the sky every few minutes. Nature's own fireworks show.
+
+As evening falls, we drive to Jökulsárlón Glacier Lagoon, where massive icebergs float silently toward the Atlantic Ocean. The blue hues of the ice are almost unreal.
+
+And then — the crown jewel of Iceland — the Northern Lights. As the Aurora Borealis dances across the Arctic sky in ribbons of green and purple, you realize some things in life truly are magical.
+
+Iceland isn't just a destination. It's a feeling. And once you've experienced it, a part of you will always want to come back.`;
+    updateStats();
+    showToast("Sample script loaded! ✨","success");
+  }
+
+  // ── Script Analysis (Mock) ────────────────────────────────────────────────
+  function analyzeScript() {
+    const script = document.getElementById("script-input").value.trim();
+    if (!script) { showToast("Please enter a script first","error"); return; }
+    showToast("Analyzing script... 🧠","info");
+
+    setTimeout(() => {
+      const words = script.split(/\s+/).length;
+      const scenes = Math.max(3, Math.ceil(words / 40));
+      const moods = ["inspirational","energetic","calm","dramatic","happy"];
+      const mood = moods[Math.floor(Math.random()*moods.length)];
+      const genres = ["Cinematic Orchestra","Ambient Electronic","Upbeat Pop","Epic Adventure","Soft Piano"];
+      const genre = genres[Math.floor(Math.random()*genres.length)];
+      const dur = Math.round((words/140)*60);
+
+      const panel = document.getElementById("analysis-panel");
+      const out = document.getElementById("analysis-output");
+
+      out.innerHTML = `
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+          <span class="badge badge-primary">🎭 ${mood}</span>
+          <span class="badge badge-green">⏱️ ~${dur<60?dur+'s':Math.floor(dur/60)+'m'+dur%60+'s'}</span>
+          <span class="badge badge-yellow">🎬 ${scenes} scenes</span>
+          <span class="badge badge-orange">🎵 ${genre}</span>
+        </div>
+        <div style="padding:12px;background:var(--bg2);border-radius:var(--r);margin-bottom:12px;font-size:.84rem;color:var(--text2)">
+          A ${mood} video exploring themes from your script with ${scenes} carefully crafted scenes, each with targeted B-roll footage and smooth ${["fade","dissolve","wipe"][Math.floor(Math.random()*3)]} transitions.
+        </div>
+        <div style="font-size:.82rem;font-weight:600;color:var(--text3);margin-bottom:8px">SAMPLE SCENES</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${Array.from({length:Math.min(4,scenes)},(_,i)=>`
+            <div style="padding:10px;background:var(--bg2);border-radius:var(--r);border-left:3px solid var(--primary)">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                <span style="font-size:.76rem;font-weight:600">Scene ${i+1}</span>
+                <span style="font-size:.76rem;color:var(--text3)">${(3+Math.random()*4).toFixed(1)}s • ${["fade","dissolve","cut"][i%3]}</span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">
+                ${["iceland waterfall","northern lights sky","glacier lagoon blue","mountain landscape snow","aurora borealis night"].slice(i,i+3).map(k=>`<span style="font-size:.7rem;padding:2px 7px;background:rgba(108,99,255,.1);color:var(--primary);border-radius:4px">${k}</span>`).join("")}
+              </div>
+            </div>`).join("")}
+          ${scenes>4?`<div style="text-align:center;font-size:.78rem;color:var(--text3)">+${scenes-4} more scenes</div>`:""}
+        </div>
+        <div class="g2" style="margin-top:12px;gap:8px">
+          <div style="padding:10px;background:var(--bg2);border-radius:var(--r)">
+            <div style="font-size:.72rem;color:var(--text3);margin-bottom:4px">🎵 MUSIC</div>
+            <div style="font-size:.82rem;font-weight:600">${genre}</div>
+            <div style="font-size:.76rem;color:var(--text2)">${mood} • medium tempo</div>
+          </div>
+          <div style="padding:10px;background:var(--bg2);border-radius:var(--r)">
+            <div style="font-size:.72rem;color:var(--text3);margin-bottom:4px">🎤 VOICE</div>
+            <div style="font-size:.82rem;font-weight:600">Warm & Authoritative</div>
+            <div style="font-size:.76rem;color:var(--text2)">Normal pace • Inspiring</div>
+          </div>
+        </div>`;
+
+      panel.style.display = "block";
+      document.getElementById("mood-badge").style.display = "inline-flex";
+      document.getElementById("mood-badge").textContent = mood;
+      showToast("Script analyzed successfully! 🧠","success");
+    }, 1800);
+  }
+
+  // ── Generate Video (Simulated) ────────────────────────────────────────────
+  function generateVideo() {
+    const script = document.getElementById("script-input").value.trim();
+    if (!script) { showToast("Please enter a script first","error"); return; }
+
+    const sizes = Array.from(document.querySelectorAll(".size-chip.selected")).map(c => c.dataset.key);
+    if (!sizes.length) { showToast("Select at least one output format","error"); return; }
+
+    currentJobId = "job_" + Math.random().toString(36).slice(2,10);
+    document.getElementById("prog-id").textContent = "Job ID: " + currentJobId;
+    document.getElementById("progress-modal").classList.add("open");
+
+    resetSteps();
+    simulateProgress();
+    showToast("🚀 Video generation started!","success");
+  }
+
+  function resetSteps() {
+    STEP_ORDER.forEach(s => {
+      const el = document.getElementById("ps-"+s);
+      const msg = document.getElementById("ps-"+s+"-msg");
+      const icon = document.getElementById("ps-"+s+"-icon");
+      if (!el) return;
+      el.classList.remove("active","done");
+      if (msg) msg.textContent = "Waiting...";
+      if (icon) icon.textContent = "⏳";
+    });
+    document.getElementById("prog-fill").style.width = "0%";
+    document.getElementById("prog-pct").textContent = "0%";
+    document.getElementById("prog-msg").textContent = "Starting pipeline...";
+    document.getElementById("view-dash-btn").style.display = "none";
+  }
+
+  function simulateProgress() {
+    const steps = [
+      {step:"analyzing", pct:8,  msg:"🧠 Analyzing script with GPT-4..."},
+      {step:"analyzing", pct:12, msg:"✅ 6 scenes detected • mood: inspirational"},
+      {step:"broll",     pct:18, msg:"🎬 Searching Pexels for 'iceland waterfall'..."},
+      {step:"broll",     pct:28, msg:"🎬 Downloading clip 2/6: aurora borealis night..."},
+      {step:"broll",     pct:36, msg:"✅ B-roll: 5/6 clips found"},
+      {step:"voiceover", pct:44, msg:"🎤 Generating voiceover with ElevenLabs..."},
+      {step:"voiceover", pct:50, msg:"✅ Voiceover generated (52s)"},
+      {step:"music",     pct:56, msg:"🎵 Finding inspirational background music..."},
+      {step:"sfx",       pct:60, msg:"🔊 Fetching sound effects for 3 scenes..."},
+      {step:"captions",  pct:66, msg:"📝 Transcribing with Whisper AI..."},
+      {step:"captions",  pct:70, msg:"✅ 47 caption segments generated"},
+      {step:"compose",   pct:76, msg:"🎞️ Composing portrait_1080 (9:16)..."},
+      {step:"compose",   pct:84, msg:"🎞️ Composing landscape_1080p (16:9)..."},
+      {step:"compose",   pct:92, msg:"🎞️ Burning in captions & final export..."},
+      {step:"compose",   pct:97, msg:"✅ Video composition complete!"},
+      {step:"finalizing",pct:100,msg:"🎉 Your videos are ready for download!"},
+    ];
+
+    let idx = 0;
+    simInterval = setInterval(() => {
+      if (idx >= steps.length) {
+        clearInterval(simInterval);
+        onDone();
+        return;
+      }
+      const s = steps[idx];
+      updateStep(s.step, s.pct, s.msg);
+      idx++;
+    }, 1200);
+  }
+
+  function updateStep(step, pct, msg) {
+    const stepIdx = STEP_ORDER.indexOf(step);
+
+    STEP_ORDER.forEach((s, i) => {
+      const el = document.getElementById("ps-"+s);
+      const msgEl = document.getElementById("ps-"+s+"-msg");
+      const iconEl = document.getElementById("ps-"+s+"-icon");
+      if (!el) return;
+
+      if (i < stepIdx) {
+        el.classList.add("done"); el.classList.remove("active");
+        if (iconEl) iconEl.textContent = "✅";
+        if (msgEl) msgEl.textContent = "Complete";
+      } else if (s === step) {
+        el.classList.add("active"); el.classList.remove("done");
+        if (iconEl) iconEl.innerHTML = '<span class="spin" style="display:inline-block">🔄</span>';
+        if (msgEl) msgEl.textContent = msg;
+      }
+    });
+
+    document.getElementById("prog-fill").style.width = pct+"%";
+    document.getElementById("prog-pct").textContent = pct+"%";
+    document.getElementById("prog-msg").textContent = msg;
+  }
+
+  function onDone() {
+    STEP_ORDER.forEach(s => {
+      const el = document.getElementById("ps-"+s);
+      const iconEl = document.getElementById("ps-"+s+"-icon");
+      if (!el) return;
+      el.classList.add("done"); el.classList.remove("active");
+      if (iconEl) iconEl.textContent = "✅";
+    });
+    document.getElementById("view-dash-btn").style.display = "flex";
+    showToast("🎉 Video ready! Click 'View Dashboard' to download.","success",7000);
+    addDemoJob();
+  }
+
+  // ── Dashboard ─────────────────────────────────────────────────────────────
+  const demoJobs = [
+    { id:"abc123de", status:"completed", created:"2025-01-15T10:30:00", sizes:["📱 Reels 9:16","📺 YouTube 16:9"], voice:"ElevenLabs • Rachel", progress:100, msg:"Video ready!" },
+    { id:"xyz789ab", status:"processing", created:"2025-01-15T11:15:00", sizes:["📱 Reels 9:16"], voice:"OpenAI TTS • Nova", progress:67, msg:"🎵 Adding background music..." },
+    { id:"def456gh", status:"completed", created:"2025-01-14T16:20:00", sizes:["📺 YouTube 16:9","⬛ Square 1:1","📱 Reels 9:16"], voice:"ElevenLabs • Adam", progress:100, msg:"Video ready!" },
+    { id:"mno321pq", status:"failed",    created:"2025-01-14T14:00:00", sizes:["📺 YouTube 16:9"], voice:"OpenAI TTS • Fable", progress:23, msg:"Error: API rate limit exceeded" },
+    { id:"rst654uv", status:"completed", created:"2025-01-13T09:45:00", sizes:["📱 Reels 9:16"], voice:"OpenAI TTS • Alloy", progress:100, msg:"Video ready!" },
+  ];
+
+  function addDemoJob() {
+    demoJobs.unshift({
+      id: currentJobId,
+      status: "completed",
+      created: new Date().toISOString(),
+      sizes: Array.from(document.querySelectorAll(".size-chip.selected")).map(c=>({portrait_1080:"📱 Reels 9:16",landscape_1080p:"📺 YouTube 16:9",square_1080:"⬛ Square 1:1",landscape_720p:"🖥️ 720p",portrait_720:"📱 Stories",twitter:"🐦 Twitter"}[c.dataset.key]||c.dataset.key)),
+      voice: document.getElementById("voice-provider").value + " • " + document.getElementById("voice-name").value,
+      progress: 100, msg: "Video ready!"
+    });
+  }
+
+  function renderDemoJobs() {
+    const c = document.getElementById("jobs-list");
+    const STATUS = {
+      completed:  {icon:"✅",badge:"badge-green",  label:"Completed",  cls:"completed"},
+      processing: {icon:"⏳",badge:"badge-yellow", label:"Processing", cls:"processing"},
+      failed:     {icon:"❌",badge:"badge-red",    label:"Failed",     cls:"failed"},
+      queued:     {icon:"🕐",badge:"",            label:"Queued",     cls:""}
+    };
+
+    c.innerHTML = demoJobs.map(j => {
+      const s = STATUS[j.status]||STATUS.queued;
+      const date = new Date(j.created).toLocaleString();
+      return `
+        <div class="job-card ${s.cls}" style="margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+            <div style="font-size:1.3rem">${s.icon}</div>
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+                <span style="font-weight:700;font-family:monospace;font-size:.88rem">${j.id}</span>
+                <span class="badge ${s.badge}" style="font-size:.7rem">${s.label}</span>
+              </div>
+              <div style="font-size:.78rem;color:var(--text3)">${date} • ${j.sizes.join(", ")} • ${j.voice}</div>
+            </div>
+          </div>
+          ${j.status==="completed" ? `
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              ${j.sizes.map(sz=>`<a href="#" class="btn btn-success btn-sm" onclick="event.preventDefault();showToast('Downloading ${sz}...','success')">⬇️ Download ${sz}</a>`).join("")}
+            </div>`
+          : j.status==="processing" ? `
+            <div>
+              <div class="progress-bar"><div class="progress-fill" style="width:${j.progress}%"></div></div>
+              <div style="font-size:.76rem;color:var(--text3);margin-top:5px">${j.msg}</div>
+            </div>`
+          : j.status==="failed" ? `
+            <div style="font-size:.82rem;color:var(--red)">${j.msg}</div>` : ""}
+        </div>`;
+    }).join("");
+  }
+
+  // ── Utilities ─────────────────────────────────────────────────────────────
+  function showToast(msg, type="info", duration=4000) {
+    const icons = {success:"✅",error:"❌",info:"ℹ️"};
+    const c = document.getElementById("toasts");
+    const t = document.createElement("div");
+    t.className = `toast ${type}`;
+    t.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+    c.appendChild(t);
+    setTimeout(()=>{ t.style.cssText="opacity:0;transform:translateX(100%);transition:.3s ease"; setTimeout(()=>t.remove(),300); }, duration);
+  }
+
+  function copyEnv() {
+    const text = `SECRET_KEY=your-random-secret-key\nPORT=5000\nOPENAI_API_KEY=sk-proj-...\nELEVENLABS_API_KEY=your-key\nPEXELS_API_KEY=your-key\nPIXABAY_API_KEY=your-key\nFREESOUND_API_KEY=your-key`;
+    navigator.clipboard.writeText(text).then(()=>showToast("Copied! Paste into your .env file","success")).catch(()=>showToast("Copy failed","error"));
+  }
+
+  // Close modals on backdrop click
+  document.getElementById("progress-modal").addEventListener("click", e => {
+    if (e.target === e.currentTarget) e.currentTarget.classList.remove("open");
+  });
+</script>
+</body>
+</html>

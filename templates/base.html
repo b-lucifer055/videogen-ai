@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}VideoGen AI{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>"/>
+  <link rel="stylesheet" href="/static/css/main.css"/>
+</head>
+<body>
+
+<!-- ── Sidebar ─────────────────────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🎬</div>
+    <div>
+      <div class="logo-text">Video<span>Gen</span></div>
+      <div style="font-size:.68rem;color:var(--green);font-weight:600;margin-top:1px">✅ 100% Free</div>
+    </div>
+  </div>
+
+  <div style="padding:14px 8px;flex:1">
+    <div class="sidebar-section">Create</div>
+
+    <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}">
+      <span class="nav-icon">✍️</span>
+      Script Studio
+    </a>
+
+    <a href="/clips" class="nav-item {% if request.path == '/clips' %}active{% endif %}">
+      <span class="nav-icon">🎬</span>
+      Raw Clips Editor
+      <span class="nav-badge" style="background:var(--orange)">NEW</span>
+    </a>
+
+    <a href="/audio" class="nav-item {% if request.path == '/audio' %}active{% endif %}">
+      <span class="nav-icon">🎙️</span>
+      Audio → Video
+      <span class="nav-badge" style="background:var(--cyan);color:#001">HI/NE</span>
+    </a>
+
+    <div class="sidebar-section" style="margin-top:8px">Manage</div>
+
+    <a href="/dashboard" class="nav-item {% if request.path == '/dashboard' %}active{% endif %}">
+      <span class="nav-icon">📊</span>
+      Dashboard
+    </a>
+
+    <a href="/settings" class="nav-item {% if request.path == '/settings' %}active{% endif %}">
+      <span class="nav-icon">⚙️</span>
+      Settings & APIs
+    </a>
+
+    <div class="sidebar-section" style="margin-top:8px">Free APIs Used</div>
+
+    <div style="padding:8px 12px;display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;align-items:center;gap:8px;font-size:.75rem">
+        <div class="status-chip status-online" style="padding:0"><div class="dot"></div></div>
+        <span style="color:var(--text2)">edge-tts (Voiceover)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:.75rem">
+        <div class="status-chip status-online" style="padding:0"><div class="dot"></div></div>
+        <span style="color:var(--text2)">Whisper (Transcribe)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:.75rem">
+        <div id="pexels-dot" class="status-chip status-warning" style="padding:0"><div class="dot"></div></div>
+        <span style="color:var(--text2)">Pexels (B-Roll)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:.75rem">
+        <div id="pixabay-dot" class="status-chip status-warning" style="padding:0"><div class="dot"></div></div>
+        <span style="color:var(--text2)">Pixabay (Music)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:.75rem">
+        <div id="freesound-dot" class="status-chip status-warning" style="padding:0"><div class="dot"></div></div>
+        <span style="color:var(--text2)">Freesound (SFX)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-bottom">
+    <div style="padding:12px;background:linear-gradient(135deg,rgba(108,99,255,.12),rgba(255,107,157,.08));border:1px solid rgba(108,99,255,.2);border-radius:var(--r2);font-size:.75rem;text-align:center">
+      <div style="font-size:1.1rem;margin-bottom:5px">💚</div>
+      <div style="font-weight:700;margin-bottom:3px">100% Free Forever</div>
+      <div style="color:var(--text3)">No API costs, no subscriptions</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main Content ─────────────────────────────────────────────────────────── -->
+<main class="main-content">
+  {% block content %}{% endblock %}
+</main>
+
+<!-- ── Toast Container ──────────────────────────────────────────────────────── -->
+<div id="toast-container"></div>
+
+<script>
+  // ── Global Utilities ──────────────────────────────────────────────────────
+  function showToast(msg, type = "info", dur = 4500) {
+    const icons = {success:"✅",error:"❌",info:"ℹ️",warning:"⚠️"};
+    const c = document.getElementById("toast-container");
+    const t = document.createElement("div");
+    t.className = `toast ${type}`;
+    t.innerHTML = `<span style="flex-shrink:0">${icons[type]}</span><span>${msg}</span>`;
+    c.appendChild(t);
+    setTimeout(()=>{
+      t.style.cssText += ";opacity:0;transform:translateX(100%);transition:.3s";
+      setTimeout(()=>t.remove(), 300);
+    }, dur);
+  }
+
+  function formatDuration(s) {
+    const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+    return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
+  }
+
+  function formatDate(iso) {
+    return new Date(iso).toLocaleString(undefined, {
+      month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"
+    });
+  }
+
+  function formatMB(bytes) {
+    return (bytes / (1024*1024)).toFixed(1) + " MB";
+  }
+
+  // ── Check API health & update sidebar dots ────────────────────────────────
+  async function checkHealth() {
+    try {
+      const resp = await fetch("/api/health");
+      const d = await resp.json();
+      const apis = d.apis || {};
+      const setDot = (id, ok) => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.className = "status-chip " + (ok ? "status-online" : "status-offline");
+        }
+      };
+      setDot("pexels-dot", apis.pexels);
+      setDot("pixabay-dot", apis.pixabay);
+      setDot("freesound-dot", apis.freesound);
+    } catch(e) {}
+  }
+  checkHealth();
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

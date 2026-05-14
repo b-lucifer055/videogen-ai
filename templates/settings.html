@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}Settings — VideoGen AI{% endblock %}
+{% block content %}
+
+<div class="topbar">
+  <span style="font-size:1.2rem">⚙️</span>
+  <span class="topbar-title">Settings & API Keys</span>
+  <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="checkStatus()">🔄 Check Status</button>
+</div>
+
+<div class="page-body" style="padding-top:24px;max-width:900px">
+
+  <!-- Free Stack Banner -->
+  <div style="background:linear-gradient(135deg,rgba(0,212,170,.08),rgba(0,212,255,.05));border:1px solid rgba(0,212,170,.25);border-radius:var(--r2);padding:18px 22px;margin-bottom:22px;display:flex;align-items:center;gap:16px">
+    <div style="font-size:2.5rem">💚</div>
+    <div>
+      <div style="font-weight:800;font-size:1.05rem;margin-bottom:4px">VideoGen AI is 100% Free</div>
+      <div style="font-size:.85rem;color:var(--text2)">All core features use completely free APIs. Only Pexels/Pixabay/Freesound keys are needed (all free tiers). No paid subscriptions, no credit cards required.</div>
+    </div>
+  </div>
+
+  <!-- System Status -->
+  <div class="card card-glow" style="margin-bottom:20px">
+    <h3 style="margin-bottom:16px">🖥️ System Status</h3>
+    <div class="g3" style="gap:12px" id="system-status-grid">
+      <div style="padding:14px;background:var(--bg2);border-radius:var(--r2);border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span>🎬</span><strong>ffmpeg</strong><div id="dot-ffmpeg" style="width:9px;height:9px;border-radius:50%;background:var(--text3);margin-left:auto"></div></div>
+        <div style="font-size:.76rem;color:var(--text3)">Video processing engine</div>
+        <div id="label-ffmpeg" class="badge" style="margin-top:8px;font-size:.7rem">Checking...</div>
+      </div>
+      <div style="padding:14px;background:var(--bg2);border-radius:var(--r2);border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span>🤖</span><strong>Whisper</strong><div id="dot-whisper" style="width:9px;height:9px;border-radius:50%;background:var(--text3);margin-left:auto"></div></div>
+        <div style="font-size:.76rem;color:var(--text3)">Local speech recognition</div>
+        <div id="label-whisper" class="badge" style="margin-top:8px;font-size:.7rem">Checking...</div>
+      </div>
+      <div style="padding:14px;background:var(--bg2);border-radius:var(--r2);border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span>🗣️</span><strong>edge-tts</strong><div id="dot-edge" style="width:9px;height:9px;border-radius:50%;background:var(--text3);margin-left:auto"></div></div>
+        <div style="font-size:.76rem;color:var(--text3)">Microsoft free TTS</div>
+        <div id="label-edge" class="badge" style="margin-top:8px;font-size:.7rem">Checking...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- API Keys -->
+  <div class="card" style="margin-bottom:20px">
+    <h3 style="margin-bottom:16px">🔑 Free API Keys (Optional but Recommended)</h3>
+    <p style="font-size:.84rem;margin-bottom:18px">These APIs are all free. Adding them enables B-roll footage, music, and sound effects. Without them, the app uses animated fallback clips.</p>
+
+    <div style="display:flex;flex-direction:column;gap:12px" id="api-grid">
+
+      <div style="display:flex;align-items:center;gap:14px;padding:14px;background:var(--bg2);border-radius:var(--r2);border:1px solid var(--border)" id="api-pexels">
+        <div style="font-size:1.6rem">🎬</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+            <strong>Pexels</strong>
+            <span class="badge badge-green">FREE</span>
+            <div id="dot-pexels" style="width:8px;height:8px;border-radius:50%;background:var(--text3)"></div>
+          </div>
+          <div style="font-size:.78rem;color:var(--text3)">B-Roll video footage • 200 requests/hour free</div>
+        </div>
+        <a href="https://www.pexels.com/api/" target="_blank" class="btn btn-ghost btn-sm">Get Free Key →</a>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:14px;padding:14px;background:var(--bg2);border-radius:var(--r2);border:1px solid var(--border)">
+        <div style="font-size:1.6rem">🖼️</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+            <strong>Pixabay</strong>
+            <span class="badge badge-green">FREE</span>
+            <div id="dot-pixabay" style="width:8px;height:8px;border-radius:50%;background:var(--text3)"></div>
+          </div>
+          <div style="font-size:.78rem;color:var(--text3)">More B-Roll + background music • 100 req/min free</div>
+        </div>
+        <a href="https://pixabay.com/api/docs/" target="_blank" class="btn btn-ghost btn-sm">Get Free Key →</a>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:14px;padding:14px;background:var(--bg2);border-radius:var(--r2);border:1px solid var(--border)">
+        <div style="font-size:1.6rem">🔊</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+            <strong>Freesound</strong>
+            <span class="badge badge-green">FREE</span>
+            <div id="dot-freesound" style="width:8px;height:8px;border-radius:50%;background:var(--text3)"></div>
+          </div>
+          <div style="font-size:.78rem;color:var(--text3)">Sound effects library • 500,000+ sounds free</div>
+        </div>
+        <a href="https://freesound.org/apiv2/apply/" target="_blank" class="btn btn-ghost btn-sm">Get Free Key →</a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- .env Config -->
+  <div class="card" style="margin-bottom:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3>📄 Configuration (.env file)</h3>
+      <button class="btn btn-ghost btn-sm" onclick="copyEnv()">📋 Copy Template</button>
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r2);padding:18px;font-family:monospace;font-size:.82rem;line-height:2;overflow-x:auto">
+      <div><span style="color:var(--text3)"># Create a file named .env in the videogen/ folder</span></div>
+      <br/>
+      <div><span style="color:var(--text3)"># Flask settings</span></div>
+      <div><span style="color:var(--yellow)">SECRET_KEY</span>=<span style="color:var(--green)">any-random-string-abc123</span></div>
+      <div><span style="color:var(--yellow)">PORT</span>=<span style="color:var(--green)">5000</span></div>
+      <br/>
+      <div><span style="color:var(--text3)"># FREE - Pexels B-Roll (pexels.com/api)</span></div>
+      <div><span style="color:var(--yellow)">PEXELS_API_KEY</span>=<span style="color:var(--accent)">your-free-pexels-key</span></div>
+      <br/>
+      <div><span style="color:var(--text3)"># FREE - Pixabay B-Roll + Music (pixabay.com/api/docs)</span></div>
+      <div><span style="color:var(--yellow)">PIXABAY_API_KEY</span>=<span style="color:var(--accent)">your-free-pixabay-key</span></div>
+      <br/>
+      <div><span style="color:var(--text3)"># FREE - Freesound SFX (freesound.org/apiv2/apply)</span></div>
+      <div><span style="color:var(--yellow)">FREESOUND_API_KEY</span>=<span style="color:var(--accent)">your-free-freesound-key</span></div>
+      <br/>
+      <div><span style="color:var(--text3)"># Whisper model size (tiny/base/small/medium)</span></div>
+      <div><span style="color:var(--yellow)">WHISPER_MODEL</span>=<span style="color:var(--green)">base</span></div>
+    </div>
+  </div>
+
+  <!-- What's Free Table -->
+  <div class="card">
+    <h3 style="margin-bottom:16px">✅ What's Free vs What Requires a Key</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:.84rem">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border)">
+          <th style="text-align:left;padding:10px 8px;color:var(--text3);font-size:.75rem;text-transform:uppercase">Feature</th>
+          <th style="text-align:center;padding:10px 8px;color:var(--text3);font-size:.75rem;text-transform:uppercase">Status</th>
+          <th style="text-align:left;padding:10px 8px;color:var(--text3);font-size:.75rem;text-transform:uppercase">How</th>
+        </tr>
+      </thead>
+      <tbody id="free-table">
+        {% for row in [
+          ("✍️ Script Analysis", "✅ 100% Free", "Local NLP (no API)"),
+          ("🎤 AI Voiceover", "✅ 100% Free", "edge-tts / gTTS / pyttsx3"),
+          ("🎙️ Transcription (Whisper)", "✅ 100% Free", "Runs locally on your PC"),
+          ("🌐 Hindi/Nepali/English", "✅ 100% Free", "Whisper multilingual"),
+          ("📝 Caption Generation", "✅ 100% Free", "Local timestamp processing"),
+          ("🎬 B-Roll Footage", "🔑 Free key needed", "Pexels API (200 req/hr free)"),
+          ("🎵 Background Music", "🔑 Free key needed", "Pixabay API (free tier)"),
+          ("🔊 Sound Effects", "🔑 Free key needed", "Freesound API (free tier)"),
+          ("🎬 Video Composition", "✅ 100% Free", "ffmpeg (local)"),
+          ("📐 Multi-format Export", "✅ 100% Free", "ffmpeg (local)"),
+          ("🎨 Color Grading", "✅ 100% Free", "ffmpeg filters"),
+          ("✨ Transitions", "✅ 100% Free", "ffmpeg xfade"),
+        ] %}
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:11px 8px;font-weight:500">{{row[0]}}</td>
+          <td style="padding:11px 8px;text-align:center">
+            <span class="badge {% if '100%' in row[1] %}badge-green{% else %}badge-yellow{% endif %}" style="font-size:.7rem">{{row[1]}}</span>
+          </td>
+          <td style="padding:11px 8px;color:var(--text3)">{{row[2]}}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", checkStatus);
+
+async function checkStatus() {
+  try {
+    const r = await fetch("/api/health");
+    const d = await r.json();
+
+    const setStatus = (id, ok) => {
+      const dot = document.getElementById("dot-"+id);
+      const label = document.getElementById("label-"+id);
+      if (dot) { dot.style.background = ok ? "var(--green)" : "var(--red)"; if(ok) dot.style.boxShadow = "0 0 6px var(--green)"; }
+      if (label) {
+        label.textContent = ok ? "✅ Ready" : "❌ Not found";
+        label.className = "badge " + (ok ? "badge-green" : "badge-red");
+      }
+    };
+
+    setStatus("ffmpeg", d.ffmpeg);
+    setStatus("whisper", d.whisper);
+    setStatus("edge", d.edge_tts);
+
+    const setApiDot = (id, ok) => {
+      const dot = document.getElementById("dot-"+id);
+      if (dot) { dot.style.background = ok ? "var(--green)" : "var(--red)"; if(ok) dot.style.boxShadow = "0 0 6px var(--green)"; }
+    };
+    setApiDot("pexels", d.apis?.pexels);
+    setApiDot("pixabay", d.apis?.pixabay);
+    setApiDot("freesound", d.apis?.freesound);
+  } catch(e) { showToast("Cannot reach server","error"); }
+}
+
+function copyEnv() {
+  const text = `SECRET_KEY=any-random-string-abc123\nPORT=5000\n\n# FREE - pexels.com/api\nPEXELS_API_KEY=your-free-pexels-key\n\n# FREE - pixabay.com/api/docs\nPIXABAY_API_KEY=your-free-pixabay-key\n\n# FREE - freesound.org/apiv2/apply\nFREESOUND_API_KEY=your-free-freesound-key\n\n# Whisper model\nWHISPER_MODEL=base`;
+  navigator.clipboard.writeText(text).then(()=>showToast("Copied! Paste into your .env file","success")).catch(()=>showToast("Copy failed - copy manually","error"));
+}
+</script>
+{% endblock %}
