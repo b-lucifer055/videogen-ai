@@ -12,3 +12,5 @@ imageio
 imageio-ffmpeg
 tqdm
 eventlet
+flask-socketio
+python-socketio
